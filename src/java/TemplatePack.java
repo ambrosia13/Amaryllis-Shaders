@@ -12,11 +12,21 @@ public class TemplatePack implements ShaderPack {
     public void configurePipeline(Screen screen, PipelineConfig pipeline) {
         pipeline.combinationPass("post/combination");
 
-        var mainTexture = pipeline.texture2D("mainTexture", TextureFormat.RGBA8_UNORM).renderSize().create();
+        var mainTexture = pipeline.texture2D("mainTexture", TextureFormat.RGBA8_UNORM)
+            .renderSize()
+            .create();
 
-        if (pipeline.getSettings().getBoolValue("shadows")) pipeline.object(ProgramUsage.SHADOW, "object/shadow", "ShadowShader");
-        pipeline.object(ProgramUsage.BASIC, "object/basic", "BasicShader").writes("color", mainTexture).exportInt("CASCADE_COUNT", CASCADE_COUNT);
-        pipeline.object(ProgramUsage.TRANSLUCENT, "object/basic", "BasicShader").writes("color", mainTexture).exportInt("CASCADE_COUNT", CASCADE_COUNT);
+        if (pipeline.getSettings().getBoolValue("shadows"))  {
+            pipeline.object(ProgramUsage.SHADOW, "object/shadow", "ShadowShader");
+        }
+
+        pipeline.object(ProgramUsage.BASIC, "object/basic", "BasicShader")
+            .writes("color", mainTexture)
+            .exportInt("CASCADE_COUNT", CASCADE_COUNT);
+        
+        pipeline.object(ProgramUsage.TRANSLUCENT, "object/basic", "BasicShader")
+            .writes("color", mainTexture)
+            .exportInt("CASCADE_COUNT", CASCADE_COUNT);
 
         pipeline.stage(ProgramStage.PRE_RENDER).clearToFogColor(mainTexture);
     }
@@ -26,7 +36,7 @@ public class TemplatePack implements ShaderPack {
         rendererConfig.setSunPathRotation(40.0f);
         rendererConfig.setShadowCascades(CASCADE_COUNT);
         rendererConfig.setShadowDistance(160.0f);
-        rendererConfig.setShadowResolution(2048);
+        rendererConfig.setShadowResolution(1024);
     }
 
 }
