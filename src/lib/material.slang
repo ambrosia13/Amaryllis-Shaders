@@ -1,3 +1,5 @@
+public module material;
+
 import aperture;
 
 // We store vertex normal and fragment normal in a RGBA16_SNORM texture, with the normals storing the first two

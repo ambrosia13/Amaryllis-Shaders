@@ -62,16 +62,24 @@ public class Gbuffer {
         solidAux = new OutputsAux("solid", pipeline, true);
         translucentAux = new OutputsAux("translucent", pipeline, true);
 
+        var replaceBlendMode = new BlendMode(
+            BlendFactors.ONE, 
+            BlendFactors.ZERO, 
+            BlendFactors.ONE, 
+            BlendFactors.ZERO
+        );
+
         pipeline.object(ProgramUsage.BASIC, "object/basic", "GbufferShader")
             .writes("color", solidAlbedoTexture)
             .writes("matNormals", solidAux.matNormalsTexture)
             .writes("matPbr", solidAux.matPbrTexture)
             .writes("matLight", solidAux.matLightTexture);
 
+        // albedo should blend normally, but aux data should not blend
         pipeline.object(ProgramUsage.TRANSLUCENT, "object/basic", "GbufferShader")
             .writes("color", translucentAlbedoTexture)
-            .writes("matNormals", translucentAux.matNormalsTexture)
-            .writes("matPbr", translucentAux.matPbrTexture)
-            .writes("matLight", translucentAux.matLightTexture);
+            .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
+            .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
+            .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
     }
 }

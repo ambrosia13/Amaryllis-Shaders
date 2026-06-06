@@ -1,6 +1,7 @@
 import aperture;
 
 import lib.material;
+import lib.lighting;
 
 Texture2D solidAlbedoTexture;
 Texture2D<float4> solidMatNormalsTexture;
@@ -13,7 +14,7 @@ struct FragmentOutput {
 
 [[shader("pixel")]]
 FragmentOutput main(float2 pos: SV_Position) {
-    float3 albedo = solidAlbedoTexture[uint2(pos)].rgb;
+    float3 color = solidAlbedoTexture[uint2(pos)].rgb;
 
     float4 matNormalsSample = solidMatNormalsTexture[uint2(pos)];
     uint4 matPbrSample = solidMatPbrTexture[uint2(pos)];
@@ -21,9 +22,11 @@ FragmentOutput main(float2 pos: SV_Position) {
 
     Material mat = Material.unpack(matNormalsSample, matPbrSample, matLightSample);
 
+    color *= lighting(mat);
+
     FragmentOutput output;
 
-    output.color = float4(albedo, 1.0);
+    output.color = float4(color, 1.0);
 
     return output;
 }

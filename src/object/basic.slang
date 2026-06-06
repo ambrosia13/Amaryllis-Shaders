@@ -2,8 +2,8 @@ import aperture;
 import object_shader;
 import settings; // Contains your shader settings, both realtime and compile time.
 
-// import lib.shadows;
 import lib.material;
+import lib.lighting;
 
 struct FragmentOutput {
     float4 color;
@@ -57,10 +57,9 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         // This is equivalent to `if (objectIsCutout && alpha < 0.1) discard;`. It will determine if the object needs it.
         ap.discardCutout(color);
 
-        // // Refer to your `TemplatePackSettings`. Hit that `Generate Shader Settings` button there to regenerate the GPU-side.
-        // if (userSettings.shadows) {
-        //     color.rgb *= lerp(0.35, 1.0, shadowVisibility(input.pos));
-        // }
+        if (iris_isTranslucent) {
+            color.rgb *= lighting(mat);
+        }
 
         FragmentOutput output;
 

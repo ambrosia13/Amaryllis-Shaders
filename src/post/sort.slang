@@ -3,7 +3,7 @@ import aperture;
 import lib.material;
 
 // we want to blend with the deferred-lit solid texture
-#define def_solidLitTexture solidAlbedoTexture
+#define def_solidLitTexture mainTexture_a
 
 Texture2D def_solidLitTexture;
 Texture2D<float4> solidMatNormalsTexture;

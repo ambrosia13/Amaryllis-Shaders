@@ -18,13 +18,13 @@ public class Amaryllis implements ShaderPack {
             pipeline, 
             "mainTexture", 
             TextureFormat.RG11B10_SFLOAT, 
-            (tex) -> tex.renderSize()
+            tex -> tex.renderSize()
         );
 
         if (pipeline.getSettings().getBoolValue("shadows"))  {
             pipeline.object(ProgramUsage.SHADOW, "object/shadow", "ShadowShader");
         }
-        
+
         var gbuffer = new Gbuffer(pipeline);
         PostPasses.setup(pipeline, gbuffer, mainTextures);
     }
