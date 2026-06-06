@@ -3,8 +3,8 @@ import aperture;
 // We store vertex normal and fragment normal in a RGBA16_SNORM texture, with the normals storing the first two
 // channels in world space; the third channel will be reconstructed later with the sign bits stored in meta8.
 // 
-// f0, roughness, sssAmount, and the meta bitfield are stored in a RGBA8_UINT texture. The first three components
-// are simply stored in an unsigned normalized fashion, while the meta8 bitfield is stored directly. The meta bitfield
+// f0, roughness, sssAmount, and the meta8 bitfield are stored in a RGBA8_UINT texture. The first three components
+// are simply stored in an unsigned normalized fashion, while the meta8 bitfield is stored directly. The meta8 bitfield
 // contains two flags for the sign of both the vertex and fragment normal, and a flag for water, with the rest unused.
 // 
 // Finally, the lighting texture is an RGBA8 storing the blocklight, skylight, ambient occlusion, and emission

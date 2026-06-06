@@ -1,6 +1,6 @@
 import aperture;
 
-#define def_outputTexture mainTexture_a
+#define def_outputTexture mainTexture_b
 
 Texture2D def_outputTexture;
 

@@ -1,6 +1,7 @@
 import org.joml.Vector4f;
 
 import config.Gbuffer;
+import config.PostPasses;
 import dev.irisshaders.aperture.api.*;
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
@@ -20,21 +21,12 @@ public class Amaryllis implements ShaderPack {
             (tex) -> tex.renderSize()
         );
 
-        var gbuffer = new Gbuffer(pipeline);
-
         if (pipeline.getSettings().getBoolValue("shadows"))  {
             pipeline.object(ProgramUsage.SHADOW, "object/shadow", "ShadowShader");
         }
-
-        pipeline.stage(ProgramStage.POST_RENDER)
-            .composite("deferred", "post/deferred", "main")
-            .writes("color", mainTextures.firstWrite());
-            // .overrideObject("in_albedoTexture", gbuffer.solidOutputs.albedoTexture.name())
-            // .overrideObject("in_matNormalsTexture", gbuffer.solidOutputs.matNormalsTexture.name())
-            // .overrideObject("in_matPbrTexture", gbuffer.solidOutputs.matPbrTexture.name())
-            // .overrideObject("in_matLightTexture", gbuffer.solidOutputs.matLightTexture.name());
-
-        pipeline.combinationPass("post/combination");
+        
+        var gbuffer = new Gbuffer(pipeline);
+        PostPasses.setup(pipeline, gbuffer, mainTextures);
     }
 
     @Override

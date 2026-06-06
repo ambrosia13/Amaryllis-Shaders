@@ -1,5 +1,7 @@
 package config;
 
+import org.joml.Vector4f;
+
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
 
@@ -54,8 +56,8 @@ public class Gbuffer {
             .renderSize()
             .create();
 
-        pipeline.stage(ProgramStage.PRE_RENDER).clearToWhite(solidAlbedoTexture);
-        pipeline.stage(ProgramStage.PRE_RENDER).clearToWhite(translucentAlbedoTexture);
+        pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), solidAlbedoTexture);
+        pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), translucentAlbedoTexture);
 
         solidAux = new OutputsAux("solid", pipeline, true);
         translucentAux = new OutputsAux("translucent", pipeline, true);
