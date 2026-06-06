@@ -1,8 +1,10 @@
 import aperture;
 
-Texture2D mainTexture;
+#define def_outputTexture mainTexture_a
+
+Texture2D def_outputTexture;
 
 [[shader("pixel")]]
 float4 main(float2 pos: SV_Position) {
-    return mainTexture[uint2(pos)];
+    return saturate(def_outputTexture[uint2(pos)]);
 }
