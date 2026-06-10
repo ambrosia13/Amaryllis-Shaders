@@ -3,9 +3,9 @@ import aperture;
 import lib.material;
 
 // we want to blend with the deferred-lit solid texture
-#define def_solidLitTexture mainTexture_a
+// #define def_solidLitTexture mainTexture_a
 
-Texture2D def_solidLitTexture;
+Texture2D solidLitTexture;
 Texture2D<float4> solidMatNormalsTexture;
 Texture2D<uint4> solidMatPbrTexture;
 Texture2D<float4> solidMatLightTexture;
@@ -31,7 +31,7 @@ FragmentOutput main(float2 pos: SV_Position) {
     float translucentDepth = ap.depth[coord];
 
     // start the blending with solid as a background
-    float3 compositeColor = def_solidLitTexture[coord].rgb;
+    float3 compositeColor = solidLitTexture[coord].rgb;
     float4 compositeMatNormalsSample = solidMatNormalsTexture[coord];
     uint4 compositeMatPbrSample = solidMatPbrTexture[coord];
     float4 compositeMatLightSample = solidMatLightTexture[coord];

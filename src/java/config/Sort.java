@@ -12,6 +12,7 @@ public class Sort {
 
         pipeline.stage(ProgramStage.POST_RENDER)
             .composite("sort", "post/sort", "main")
+            .overrideObject("solidLitTexture", inputTexture.name())
             .writes("color", outputTexture)
             .writes("matNormals", compositeAux.matNormalsTexture)
             .writes("matPbr", compositeAux.matPbrTexture)

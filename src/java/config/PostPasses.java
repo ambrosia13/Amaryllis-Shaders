@@ -10,7 +10,7 @@ public class PostPasses {
         // we don't need to do a flip for the first write, since it reads from elsewhere and writes to _a.
         // after this, we still use the default behavior of reading from _a and writing to _b, and only then
         // do we swap so that _b is only read from after it's written to.
-        deferred(pipeline, null, mainTextures.firstWrite());
+        deferred(pipeline, mainTextures.firstWrite());
 
         // no flip needed here!
         var sort = new Sort(pipeline, mainTextures.read(), mainTextures.write());
@@ -21,7 +21,7 @@ public class PostPasses {
         pipeline.combinationPass("post/combination");
     }
 
-    static void deferred(PipelineConfig pipeline, Texture2D input, Texture2D output) {
+    static void deferred(PipelineConfig pipeline, Texture2D output) {
         pipeline.stage(ProgramStage.POST_RENDER)
             .composite("deferred", "post/deferred", "main")
             .writes("color", output);
