@@ -2,6 +2,7 @@ import org.joml.Vector4f;
 
 import config.Gbuffer;
 import config.PostPasses;
+import config.Shadow;
 import dev.irisshaders.aperture.api.*;
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
@@ -9,8 +10,6 @@ import dev.irisshaders.aperture.api.renderer.*;
 import util.SwapTexture2D;
 
 public class Amaryllis implements ShaderPack {
-    private static final int CASCADE_COUNT = 4;
-
     @Override
     public void configurePipeline(Screen screen, PipelineConfig pipeline) {
         // the main texture, written to after the gbuffer outputs are resolved and used for the combination pass
@@ -21,10 +20,7 @@ public class Amaryllis implements ShaderPack {
             tex -> tex.renderSize()
         );
 
-        if (pipeline.getSettings().getBoolValue("shadows"))  {
-            pipeline.object(ProgramUsage.SHADOW, "object/shadow", "ShadowShader");
-        }
-
+        Shadow.setup(pipeline);
         var gbuffer = new Gbuffer(pipeline);
         PostPasses.setup(pipeline, gbuffer, mainTextures);
     }
@@ -32,7 +28,7 @@ public class Amaryllis implements ShaderPack {
     @Override
     public void configureRenderer(RendererConfig rendererConfig) {
         rendererConfig.setSunPathRotation(40.0f);
-        rendererConfig.setShadowCascades(CASCADE_COUNT);
+        rendererConfig.setShadowCascades(Shadow.CASCADE_COUNT);
         rendererConfig.setShadowDistance(160.0f);
         rendererConfig.setShadowResolution(1024);
     }

@@ -58,7 +58,8 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         ap.discardCutout(color);
 
         if (iris_isTranslucent) {
-            color.rgb *= lighting(mat);
+            color.rgb *= lighting(input.pos, mat);
+            // color.rgb = input.pos / 100.0;
         }
 
         FragmentOutput output;

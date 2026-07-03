@@ -24,6 +24,7 @@ public class PostPasses {
     static void deferred(PipelineConfig pipeline, Texture2D output) {
         pipeline.stage(ProgramStage.POST_RENDER)
             .composite("deferred", "post/deferred", "main")
-            .writes("color", output);
+            .writes("color", output)
+            .exportInt("CASCADE_COUNT", Shadow.CASCADE_COUNT);
     }
 }

@@ -2,7 +2,7 @@ public module shadows; // Declare this is a module that can be imported.
 
 import aperture;
 
-extern static const int CASCADE_COUNT; // See `exportInt` in the Java.
+extern static const int CASCADE_COUNT = 4; // See `exportInt` in the Java.
 
 // Please. Rewrite this. This is just a poor example.
 static bool projectShadow(float4 lightView, uint cascade, out float2 uv, out float depth) {

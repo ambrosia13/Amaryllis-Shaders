@@ -81,5 +81,19 @@ public class Gbuffer {
             .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
             .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
             .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
-    }
+
+        // override all hand stuff to go to translucent (i.e. forward rendered)
+        pipeline.object(ProgramUsage.HAND, "object/basic", "GbufferShader")
+            .writes("color", translucentAlbedoTexture)
+            .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
+            .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
+            .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
+
+        pipeline.object(ProgramUsage.TRANSLUCENT_HAND, "object/basic", "GbufferShader")
+            .writes("color", translucentAlbedoTexture)
+            .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
+            .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
+            .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
+
+        }
 }

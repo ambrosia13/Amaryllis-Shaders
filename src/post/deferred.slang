@@ -2,6 +2,7 @@ import aperture;
 
 import lib.material;
 import lib.lighting;
+import lib.space;
 
 Texture2D solidAlbedoTexture;
 Texture2D<float4> solidMatNormalsTexture;
@@ -22,7 +23,20 @@ FragmentOutput main(float2 pos: SV_Position) {
 
     Material mat = Material.unpack(matNormalsSample, matPbrSample, matLightSample);
 
-    color *= lighting(mat);
+    float depth = ap.opaqueDepth[uint2(pos)];
+    float handDepth = max(depth, ap.handDepth[uint2(pos)]);
+
+    if (handDepth <= depth && depth != 0.0) {
+        float3 screenSpacePos = float3(pos / ap.game.renderSize, depth);
+        float3 sceneSpacePos = screenSpaceToSceneSpace(screenSpacePos);
+
+        float3 viewDir = normalize(sceneSpacePos);
+        // color = float3(viewDir);
+        // color = sceneSpacePos / 100.0;
+        // color = float3(1.0, 0.0, 0.0);
+        color *= lighting(sceneSpacePos, mat);
+    }
+
 
     FragmentOutput output;
 
