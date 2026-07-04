@@ -5,6 +5,8 @@ import settings; // Contains your shader settings, both realtime and compile tim
 import lib.material;
 import lib.lighting;
 
+extern static const bool isTranslucentHandRendering = false;
+
 struct FragmentOutput {
     float4 color;
 
@@ -58,6 +60,15 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         ap.discardCutout(color);
 
         if (iris_isTranslucent) {
+            // avoid drawing translucent hand during translucent rendering
+            if (!isTranslucentHandRendering) {
+                float handDepth = ap.handDepth[uint2(objectData.screenPos.xy)];
+
+                if (handDepth != 0.0) {
+                    discard;
+                }
+            }
+
             color.rgb *= lighting(input.pos, mat);
             // color.rgb = input.pos / 100.0;
         }

@@ -27,8 +27,8 @@ struct FragmentOutput {
 FragmentOutput main(float2 pos: SV_Position) {
     uint2 coord = uint2(pos);
 
-    float solidDepth = max(ap.handDepth[coord], ap.opaqueDepth[coord]);
-    float translucentDepth = ap.depth[coord];
+    float solidDepth = ap.opaqueDepth[coord];
+    float translucentDepth = max(ap.handDepth[coord], ap.depth[coord]);
 
     // start the blending with solid as a background
     float3 compositeColor = solidLitTexture[coord].rgb;

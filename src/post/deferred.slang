@@ -24,9 +24,12 @@ FragmentOutput main(float2 pos: SV_Position) {
     Material mat = Material.unpack(matNormalsSample, matPbrSample, matLightSample);
 
     float depth = ap.opaqueDepth[uint2(pos)];
-    float handDepth = max(depth, ap.handDepth[uint2(pos)]);
+    float handDepth = ap.handDepth[uint2(pos)];
 
-    if (handDepth <= depth && depth != 0.0) {
+    // since the deferred target includes the hand, merge with that before proceeding
+    depth = max(depth, handDepth);
+
+    if (depth != 0.0) {
         float3 screenSpacePos = float3(pos / ap.game.renderSize, depth);
         float3 sceneSpacePos = screenSpaceToSceneSpace(screenSpacePos);
 

@@ -33,7 +33,7 @@ public class SwapTexture2D {
     }
 
     // the first write outputs to the main texture
-    public Texture2D firstWrite() {
+    public Texture2D overwrite() {
         return read();
     }
 

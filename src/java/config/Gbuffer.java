@@ -4,6 +4,7 @@ import org.joml.Vector4f;
 
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
+import util.SwapTexture2D;
 
 public class Gbuffer {
     // we need high dynamic range in RGB, but we also need the alpha channel intact, so use rgba16f
@@ -39,25 +40,14 @@ public class Gbuffer {
             }
         }
     }
-
-    public final Texture2D solidAlbedoTexture;
-    public final Texture2D translucentAlbedoTexture;
     
     public final OutputsAux solidAux;
     public final OutputsAux translucentAux;
 
-    public Gbuffer(PipelineConfig pipeline) {
-        solidAlbedoTexture = pipeline.texture2D("solidAlbedoTexture", albedoTextureFormat)
-            .renderSize()
-            .create();
-
-        // translucents are forward rendered, so use a higher precision texture format
-        translucentAlbedoTexture = pipeline.texture2D("translucentAlbedoTexture", forwardLitTextureFormat)
-            .renderSize()
-            .create();
-
-        pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), solidAlbedoTexture);
-        pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), translucentAlbedoTexture);
+    public Gbuffer(PipelineConfig pipeline, SwapTexture2D mainTextures) {
+        // since the solid and translucent passes write to the main textures, clear them
+        pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), mainTextures.a);
+        pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), mainTextures.b);
 
         solidAux = new OutputsAux("solid", pipeline, true);
         translucentAux = new OutputsAux("translucent", pipeline, true);
@@ -69,31 +59,46 @@ public class Gbuffer {
             BlendFactors.ZERO
         );
 
-        pipeline.object(ProgramUsage.BASIC, "object/basic", "GbufferShader")
-            .writes("color", solidAlbedoTexture)
-            .writes("matNormals", solidAux.matNormalsTexture)
-            .writes("matPbr", solidAux.matPbrTexture)
-            .writes("matLight", solidAux.matLightTexture);
+        ProgramUsage[] deferredTargets = { ProgramUsage.BASIC };
+        ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT };
 
-        // albedo should blend normally, but aux data should not blend
-        pipeline.object(ProgramUsage.TRANSLUCENT, "object/basic", "GbufferShader")
-            .writes("color", translucentAlbedoTexture)
-            .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
-            .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
-            .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
-
-        // override all hand stuff to go to translucent (i.e. forward rendered)
-        pipeline.object(ProgramUsage.HAND, "object/basic", "GbufferShader")
-            .writes("color", translucentAlbedoTexture)
-            .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
-            .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
-            .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
-
-        pipeline.object(ProgramUsage.TRANSLUCENT_HAND, "object/basic", "GbufferShader")
-            .writes("color", translucentAlbedoTexture)
-            .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
-            .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
-            .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
-
+        for (var target : deferredTargets) {
+            pipeline.object(ProgramUsage.BASIC, "object/basic", "GbufferShader")
+                // this is the first write, so no need to flip
+                .writes("color", mainTextures.overwrite())
+                .writes("matNormals", solidAux.matNormalsTexture)
+                .writes("matPbr", solidAux.matPbrTexture)
+                .writes("matLight", solidAux.matLightTexture);
         }
+
+        // do deferred shading in pre-translucent stage
+        pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
+            .composite("deferred", "post/deferred", "main")
+            // reads from a and writes to b
+            .writes("color", mainTextures.write())
+            .overrideObject("solidAlbedoTexture", mainTextures.read().name())
+            .exportInt("CASCADE_COUNT", Shadow.CASCADE_COUNT);
+        
+        // flip after deferred pass, since it read from a and wrote to b
+        mainTextures.flip();
+
+        for (var target : forwardTargets) {
+            // albedo should blend normally, but aux data should not blend
+            var builder = pipeline.object(target, "object/basic", "GbufferShader")
+                // since the object shader doesn't read from a texture, but just blends into the existing texture,
+                // don't use the flipped one for writing
+                .writes("color", mainTextures.overwrite())
+                .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
+                .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
+                .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
+
+            // for translucent hand specifically, we want to set a flag to avoid a hazardous read
+            if (target == ProgramUsage.TRANSLUCENT_HAND) {
+                builder.exportBool("isTranslucentHandRendering", true);
+            }
+        }
+
+
+    }
+
 }

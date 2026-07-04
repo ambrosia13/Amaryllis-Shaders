@@ -16,12 +16,12 @@ public class Amaryllis implements ShaderPack {
         var mainTextures = new SwapTexture2D(
             pipeline, 
             "mainTexture", 
-            TextureFormat.RG11B10_SFLOAT, 
+            TextureFormat.RGBA16_SFLOAT, 
             tex -> tex.renderSize()
         );
 
         Shadow.setup(pipeline);
-        var gbuffer = new Gbuffer(pipeline);
+        var gbuffer = new Gbuffer(pipeline, mainTextures);
         PostPasses.setup(pipeline, gbuffer, mainTextures);
     }
 
