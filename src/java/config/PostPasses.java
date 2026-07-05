@@ -8,6 +8,7 @@ import util.SwapTexture2D;
 public class PostPasses {
     public static void setup(PipelineConfig pipeline, Gbuffer gbuffer, SwapTexture2D mainTextures) {
         // combination pass has no explicit outputs and reads from the ping pong
-        pipeline.combinationPass("post/combination");
+        pipeline.combinationPass("program/post/combination")
+            .overrideObject("outputTexture", mainTextures.read().name());
     }
 }

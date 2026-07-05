@@ -63,7 +63,7 @@ public class Gbuffer {
         ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT };
 
         for (var target : deferredTargets) {
-            pipeline.object(ProgramUsage.BASIC, "object/basic", "GbufferShader")
+            pipeline.object(ProgramUsage.BASIC, "program/object/basic", "GbufferShader")
                 // this is the first write, so no need to flip
                 .writes("color", mainTextures.overwrite())
                 .writes("matNormals", solidAux.matNormalsTexture)
@@ -73,7 +73,7 @@ public class Gbuffer {
 
         // do deferred shading in pre-translucent stage
         pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-            .composite("deferred", "post/deferred", "main")
+            .composite("deferred", "program/post/deferred", "main")
             // reads from a and writes to b
             .writes("color", mainTextures.write())
             .overrideObject("solidAlbedoTexture", mainTextures.read().name())
@@ -84,7 +84,7 @@ public class Gbuffer {
 
         for (var target : forwardTargets) {
             // albedo should blend normally, but aux data should not blend
-            var builder = pipeline.object(target, "object/basic", "GbufferShader")
+            var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
                 // since the object shader doesn't read from a texture, but just blends into the existing texture,
                 // don't use the flipped one for writing
                 .writes("color", mainTextures.overwrite())

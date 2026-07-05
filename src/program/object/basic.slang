@@ -59,6 +59,9 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         // This is equivalent to `if (objectIsCutout && alpha < 0.1) discard;`. It will determine if the object needs it.
         ap.discardCutout(color);
 
+        // gamma correct
+        color.rgb = pow(color.rgb, float3(2.2));
+
         if (iris_isTranslucent) {
             // avoid drawing translucent hand during translucent rendering
             if (!isTranslucentHandRendering) {
@@ -69,6 +72,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
                 }
             }
 
+            // color.rgb = float3(saturate(dot(mat.fragNormal, normalize(ap.celestial.sunPosition))));
             color.rgb *= lighting(input.pos, mat);
             // color.rgb = input.pos / 100.0;
         }

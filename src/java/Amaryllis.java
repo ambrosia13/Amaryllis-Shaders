@@ -1,5 +1,6 @@
 import org.joml.Vector4f;
 
+import config.Atmosphere;
 import config.Gbuffer;
 import config.PostPasses;
 import config.Shadow;
@@ -21,6 +22,7 @@ public class Amaryllis implements ShaderPack {
         );
 
         Shadow.setup(pipeline);
+        var atmosphere = new Atmosphere(pipeline);
         var gbuffer = new Gbuffer(pipeline, mainTextures);
         PostPasses.setup(pipeline, gbuffer, mainTextures);
     }

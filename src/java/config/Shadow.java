@@ -8,7 +8,7 @@ public class Shadow {
 
     public static void setup(PipelineConfig pipeline) {
         if (pipeline.getSettings().getBoolValue("shadows"))  {
-            pipeline.object(ProgramUsage.SHADOW, "object/shadow", "ShadowShader");
+            pipeline.object(ProgramUsage.SHADOW, "program/object/shadow", "ShadowShader");
         }
     }
 }

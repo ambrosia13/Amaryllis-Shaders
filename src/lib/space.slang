@@ -1,3 +1,5 @@
+public module space;
+
 import aperture;
 
 float3 fromScreenSpace(float3 screenSpacePos, float4x4 matrix) {
@@ -21,3 +23,18 @@ public float3 screenSpaceToSceneSpace(float3 screenSpacePos) {
     return fromScreenSpace(screenSpacePos, mul(ap.camera.viewInv, ap.camera.projectionInv));
 }
 
+public float3 sceneSpaceToScreenSpace(float3 sceneSpacePos) {
+    return toScreenSpace(sceneSpacePos, mul(ap.camera.view, ap.camera.projection));
+}
+
+public float3 screenSpaceToViewSpace(float3 screenSpacePos) {
+    return fromScreenSpace(screenSpacePos, ap.camera.projectionInv);
+}
+
+public float3 viewSpaceToScreenSpace(float3 viewSpacePos) {
+    return toScreenSpace(viewSpacePos, ap.camera.projection);
+}
+
+public float linearizeDepth(float depth) {
+    return ap.camera.near * ap.camera.far / (ap.camera.far - (depth * (ap.camera.far - ap.camera.near)));
+}
