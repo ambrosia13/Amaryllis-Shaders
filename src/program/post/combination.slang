@@ -3,6 +3,10 @@ import aperture;
 import lib.space;
 import lib.random;
 
+extern static const bool showHistogram = false;
+extern static const int histogramBins = 256;
+StructuredBuffer<uint> histogram;
+
 Texture2D outputTexture;
 
 [[shader("pixel")]]
@@ -15,6 +19,28 @@ float4 main(float2 pos: SV_Position) {
     color = tanh(color);
 
     color = pow(color, float3(1.0 / 2.2));
+
+    // deubg view for histogram
+    if (showHistogram) {
+        float2 histogramBegin = float2(10.0);
+        float2 histogramEnd = float2(histogramBins, 64.0);
+
+        float scale = 0.25;
+        float2 scaledPos = pos * scale;
+        
+        if (all(scaledPos > histogramBegin) && all(scaledPos < histogramEnd)) {
+            float normalizedX = (scaledPos.x - histogramBegin.x) / (histogramEnd.x - histogramBegin.x);
+            uint binIndex = uint(floor(normalizedX * histogramBins));
+            binIndex = min(binIndex, histogramBins - 1);
+
+            float count = float(histogram[binIndex]);
+            float countScale = 2048.0;
+
+            float height = clamp(count / countScale, 0.0, histogramEnd.y - histogramBegin.y) + histogramBegin.y;
+
+            return scaledPos.y < height ? float4(1.0) : float4(0.0);
+        }
+    }
 
 
     return saturate(float4(color, 1.0));

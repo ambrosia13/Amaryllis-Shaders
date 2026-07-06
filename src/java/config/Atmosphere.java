@@ -46,7 +46,8 @@ public class Atmosphere {
             .size(skyViewWidth, skyViewHeight)
             .create();
         
-        // workgroup size is 8x8, so divide by texture size to get workgroup size
+        // workgroup size is 8x8, so divide by texture size to get workgroup count
+        // note that texture size is explicitly divisible by 8 to avoid overdraw complications
         pipeline.stage(ProgramStage.SCREEN_SETUP)
             .compute("transmittance", "program/bake/transmittance", "transmittance")
             .exportInt("transmittanceTextureWidth", transmittanceLutWidth)

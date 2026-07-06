@@ -16,7 +16,7 @@ import lib.math;
 static const float groundRadiusMM = 6.360;
 static const float atmosphereRadiusMM = 6.460;
 
-static const float3 groundAlbedo = float3(0.0);
+static const float3 groundAlbedo = float3(0.3);
 
 // Units are per-megameter
 static const float3 rayleighScatteringBase = float3(5.802, 13.558, 33.1);

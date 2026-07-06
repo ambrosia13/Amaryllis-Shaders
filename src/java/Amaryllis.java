@@ -24,7 +24,7 @@ public class Amaryllis implements ShaderPack {
         Shadow.setup(pipeline);
         var atmosphere = new Atmosphere(pipeline);
         var gbuffer = new Gbuffer(pipeline, mainTextures);
-        PostPasses.setup(pipeline, atmosphere, gbuffer, mainTextures);
+        PostPasses.setup(screen, pipeline, atmosphere, gbuffer, mainTextures);
     }
 
     @Override

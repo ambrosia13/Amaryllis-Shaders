@@ -4,6 +4,7 @@ import lib.material;
 import lib.lighting;
 import lib.space;
 import lib.sky;
+import lib.util;
 
 Texture2D solidAlbedoTexture;
 Texture2D<float4> solidMatNormalsTexture;
