@@ -26,7 +26,8 @@ public class Atmosphere {
     public final Texture2D multiscatteringLookupTexture;
 
     // written every frame
-    public final Texture2D skyViewTexture;
+    public final Texture2D skyViewDayTexture;
+    public final Texture2D skyViewNightTexture;
 
     public Atmosphere(PipelineConfig pipeline) {
         transmittanceLookupTexture = pipeline.texture2D( "transmittanceLookupTexture", transmittanceLutFormat)
@@ -37,7 +38,11 @@ public class Atmosphere {
             .size(multiscatteringLutWidth, multiscatteringLutHeight)
             .create();
         
-        skyViewTexture = pipeline.texture2D( "skyViewTexture", skyViewTextureFormat)
+        skyViewDayTexture = pipeline.texture2D( "skyViewDayTexture", skyViewTextureFormat)
+            .size(skyViewWidth, skyViewHeight)
+            .create();
+        
+        skyViewNightTexture = pipeline.texture2D( "skyViewNightTexture", skyViewTextureFormat)
             .size(skyViewWidth, skyViewHeight)
             .create();
         
@@ -54,6 +59,10 @@ public class Atmosphere {
             .exportInt("multiscatteringTextureHeight", multiscatteringLutHeight)
             .dispatch2D(multiscatteringLutWidth / 8, multiscatteringLutHeight / 8);
         
-        
+        pipeline.stage(ProgramStage.PRE_RENDER) // note that this runs every frame!
+            .compute("skyView", "program/sky/skyView", "skyView")
+            .exportInt("skyViewWidth", skyViewWidth)
+            .exportInt("skyViewHeight", skyViewHeight)
+            .dispatch2D(skyViewWidth / 8, skyViewHeight / 8);        
     }
 }

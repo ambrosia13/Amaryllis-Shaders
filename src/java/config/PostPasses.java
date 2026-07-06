@@ -6,7 +6,7 @@ import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import util.SwapTexture2D;
 
 public class PostPasses {
-    public static void setup(PipelineConfig pipeline, Gbuffer gbuffer, SwapTexture2D mainTextures) {
+    public static void setup(PipelineConfig pipeline, Atmosphere atmosphere, Gbuffer gbuffer, SwapTexture2D mainTextures) {
         // combination pass has no explicit outputs and reads from the ping pong
         pipeline.combinationPass("program/post/combination")
             .overrideObject("outputTexture", mainTextures.read().name());

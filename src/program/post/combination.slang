@@ -12,7 +12,10 @@ float4 main(float2 pos: SV_Position) {
 
     float3 color = outputTexture[coord].rgb;
 
+    color = tanh(color);
+
     color = pow(color, float3(1.0 / 2.2));
+
 
     return saturate(float4(color, 1.0));
 
