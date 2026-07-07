@@ -12,10 +12,12 @@ public class PostPasses {
         // the exposure pass doesn't modify the image; just calculates its exposure, so no need to flip here
         var exposure = new Exposure(screen, pipeline, mainTextures.read());
 
-        var bloom = new Bloom(screen, pipeline, mainTextures.read());
+        var bloom = new Bloom(screen, pipeline, mainTextures.read(), mainTextures.write());
+
+        mainTextures.flip();
 
         // combination pass has no explicit outputs and reads from the ping pong
         pipeline.combinationPass("program/post/combination")
-            .overrideObject("outputTexture", bloom.downsampleTexture.name());
+            .overrideObject("outputTexture", mainTextures.read().name());
     }
 }

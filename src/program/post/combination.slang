@@ -17,7 +17,7 @@ float4 main(float2 pos: SV_Position) {
     float2 uv = pos / ap.game.renderSize;
     uint2 coord = uint2(pos);
 
-    float3 color = outputTexture[coord].rgb;
+    float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 0.0).rgb;
 
     float ev100 = automaticEV100(meteredLuminance[0], 1.0);
     float exposure = getExposure(ev100);
@@ -25,6 +25,8 @@ float4 main(float2 pos: SV_Position) {
     color *= exposure;
 
     color = tanh(color);
+
+    // color = float3(uv, 0.0);
 
     color = pow(color, float3(1.0 / 2.2));
 

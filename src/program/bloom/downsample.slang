@@ -8,8 +8,7 @@ import aperture;
 
 extern static const int lod;
 
-// Texture2D inputTexture;
-Texture2D bloomDownsampleTexture;
+Texture2D inputTexture;
 
 struct FragmentOutput {
     float4 color;
@@ -19,7 +18,7 @@ struct FragmentOutput {
 // 
 // Temporally stable box filter, as described by Jorge Jiminez, 2014
 // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
-float4 frx_sample13(Texture2D tex, float2 uv, float2 distance, int lod) {
+float4 frx_sample13(Texture2D tex, float2 uv, float2 distance, float lod) {
 	float4 a = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-1.0, -1.0), lod);
 	float4 b = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.0, -1.0), lod);
 	float4 c = tex.SampleLevel(apt_linearSampler, uv + distance * float2(1.0, -1.0), lod);
@@ -45,11 +44,24 @@ float4 frx_sample13(Texture2D tex, float2 uv, float2 distance, int lod) {
 	return o;
 }
 
+[[shader("pixel")]]
+FragmentOutput downsampleFirst(float2 pos: SV_Position) {
+    int2 passSize = ap.game.renderSize >> lod;
+
+    float2 uv = pos / passSize;
+    float2 distance = 1.0 / passSize;
+
+    // return FragmentOutput(float4(uv, 0.0, 1.0));
+    return FragmentOutput(frx_sample13(inputTexture, uv, distance, max(0, lod - 1)));
+}
 
 [[shader("pixel")]]
-FragmentOutput main(float2 pos: SV_Position) {
-    float2 uv = pos / ap.game.renderSize;
-    float2 distance = 1.0 / (ap.game.renderSize >> lod);
+FragmentOutput downsample(float2 pos: SV_Position) {
+    // add 1 to the lod because the base lod is already half the screen size
+    int2 passSize = ap.game.renderSize >> (lod + 1);
 
-    return FragmentOutput(frx_sample13(bloomDownsampleTexture, uv, distance, max(0, lod - 1)));
+    float2 uv = pos / passSize;
+    float2 distance = 1.0 / passSize;
+
+    return FragmentOutput(frx_sample13(inputTexture, uv, distance, max(0, lod - 1)));
 }
