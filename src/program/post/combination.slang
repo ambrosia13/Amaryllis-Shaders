@@ -4,7 +4,7 @@ import lib.space;
 import lib.random;
 import lib.exposure;
 
-extern static const bool showHistogram = false;
+extern static const bool showHistogram = true;
 extern static const int histogramBins = 256;
 StructuredBuffer<uint> histogram;
 

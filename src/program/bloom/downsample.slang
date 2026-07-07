@@ -1,0 +1,55 @@
+/*
+    This bloom method is based on the classic COD bloom, and my implementation of it, which is largely the same as in Forget-me-not Shaders,
+    is historically referenced from FREX/Canvas's bloom implementation, which is released under the GNU LGPL license, although all code here
+    other than the upsample and downsample filters is written by me.
+*/
+
+import aperture;
+
+extern static const int lod;
+
+// Texture2D inputTexture;
+Texture2D bloomDownsampleTexture;
+
+struct FragmentOutput {
+    float4 color;
+}
+
+// See this file's header.
+// 
+// Temporally stable box filter, as described by Jorge Jiminez, 2014
+// http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
+float4 frx_sample13(Texture2D tex, float2 uv, float2 distance, int lod) {
+	float4 a = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-1.0, -1.0), lod);
+	float4 b = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.0, -1.0), lod);
+	float4 c = tex.SampleLevel(apt_linearSampler, uv + distance * float2(1.0, -1.0), lod);
+	float4 d = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-0.5, -0.5), lod);
+	float4 e = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.5, -0.5), lod);
+	float4 f = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-1.0, 0.0), lod);
+	float4 g = tex.SampleLevel(apt_linearSampler, uv, lod);
+	float4 h = tex.SampleLevel(apt_linearSampler, uv + distance * float2(1.0, 0.0), lod);
+	float4 i = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-0.5, 0.5), lod);
+	float4 j = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.5, 0.5), lod);
+	float4 k = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-1.0, 1.0), lod);
+	float4 l = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.0, 1.0), lod);
+	float4 m = tex.SampleLevel(apt_linearSampler, uv + distance * float2(1.0, 1.0), lod);
+
+	float2 div = (1.0 / 4.0) * float2(0.5, 0.125);
+
+	float4 o = (d + e + i + j) * div.x;
+	o += (a + b + g + f) * div.y;
+	o += (b + c + h + g) * div.y;
+	o += (f + g + l + k) * div.y;
+	o += (g + h + m + l) * div.y;
+
+	return o;
+}
+
+
+[[shader("pixel")]]
+FragmentOutput main(float2 pos: SV_Position) {
+    float2 uv = pos / ap.game.renderSize;
+    float2 distance = 1.0 / (ap.game.renderSize >> lod);
+
+    return FragmentOutput(frx_sample13(bloomDownsampleTexture, uv, distance, max(0, lod - 1)));
+}

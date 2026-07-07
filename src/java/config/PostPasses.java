@@ -16,6 +16,6 @@ public class PostPasses {
 
         // combination pass has no explicit outputs and reads from the ping pong
         pipeline.combinationPass("program/post/combination")
-            .overrideObject("outputTexture", mainTextures.read().name());
+            .overrideObject("outputTexture", bloom.downsampleTexture.name());
     }
 }

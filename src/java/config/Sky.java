@@ -7,14 +7,14 @@ import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 
 public class Sky {
-    public static final TextureFormat skyTextureFormat = TextureFormat.RG11B10_SFLOAT;
+    public static final TextureFormat skyTextureFormat = TextureFormat.RG11B10_UFLOAT;
 
     public static final int cubemapSize = 512;
     public static final float skyAndCloudsRenderScale = 0.5f;
 
     // public final Texture3D cubemap;
 
-    
+
 
     public Sky(Screen screen, PipelineConfig pipeline) {
         // cubemap = pipeline.texture3D("cubemap", skyTextureFormat)

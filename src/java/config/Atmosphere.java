@@ -19,7 +19,7 @@ public class Atmosphere {
     public static final TextureFormat transmittanceLutFormat = TextureFormat.RGBA16_UNORM;
     public static final TextureFormat multiscatteringLutFormat = TextureFormat.RGBA16_UNORM;
     
-    public static final TextureFormat skyViewTextureFormat = TextureFormat.RG11B10_SFLOAT;
+    public static final TextureFormat skyViewTextureFormat = TextureFormat.RG11B10_UFLOAT;
 
     // populated at startup
     public final Texture2D transmittanceLookupTexture;
