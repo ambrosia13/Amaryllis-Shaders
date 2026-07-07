@@ -2,10 +2,13 @@ import aperture;
 
 import lib.space;
 import lib.random;
+import lib.exposure;
 
 extern static const bool showHistogram = false;
 extern static const int histogramBins = 256;
 StructuredBuffer<uint> histogram;
+
+StructuredBuffer<float> meteredLuminance;
 
 Texture2D outputTexture;
 
@@ -15,6 +18,11 @@ float4 main(float2 pos: SV_Position) {
     uint2 coord = uint2(pos);
 
     float3 color = outputTexture[coord].rgb;
+
+    float ev100 = automaticEV100(meteredLuminance[0], 1.0);
+    float exposure = getExposure(ev100);
+
+    color *= exposure;
 
     color = tanh(color);
 

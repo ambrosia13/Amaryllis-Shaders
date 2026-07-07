@@ -16,5 +16,5 @@ namespace Brightnesses {
     // the ratio of day brightness to night brightness
     public static const float NIGHT_BRIGHTNESS = 0.01;
 
-    public static const float ATMOSPHERE_BRIGHTNESS = 7.5;
+    public static const float ATMOSPHERE_BRIGHTNESS = 5.0;
 }

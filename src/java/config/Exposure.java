@@ -17,14 +17,14 @@ public class Exposure {
     public static final float maxLuminance = 2.0f;
 
     public final Buffer histogram; // containts one uint for each histogram bin
-    public final Buffer meteredLuminance; // contains two floats, the current and previous frame luminance
+    public final Buffer meteredLuminance; // contains a float for the metered luminance
 
     public Exposure(Screen screen, PipelineConfig pipeline, Texture2D inputTexture) {
         // uint size is 4 bytes, one uint per bin
         histogram = pipeline.buffer("histogram", 4L * histogramBins);
 
-        // float size is 4 bytes, two floats total
-        meteredLuminance = pipeline.buffer("meteredLuminance", 4L * 2L);
+        // float size is 4 bytes
+        meteredLuminance = pipeline.buffer("meteredLuminance", 4L);
 
         var workgroupSize = new Vector3i(8, 8, 1);
         var dimensions = new Vector3i(screen.renderWidth(), screen.renderHeight(), 1);
@@ -32,7 +32,7 @@ public class Exposure {
         var workgroupCounts = Util.getWorkgroupCountFromSize(workgroupSize, dimensions);
 
         pipeline.stage(ProgramStage.PRE_RENDER)
-            .compute("clearHistogram", "program/post/populateHistogram", "clearHistogram")
+            .compute("clearHistogram", "program/post/exposure/populateHistogram", "clearHistogram")
             .overrideObject("inputTexture", inputTexture.name())
             .exportInt("histogramBins", (int) histogramBins)
             .exportFloat("minLuminance", minLuminance)
@@ -40,12 +40,19 @@ public class Exposure {
             .dispatch1D(1);
 
         pipeline.stage(ProgramStage.POST_RENDER)
-            .compute("populateHistogram", "program/post/populateHistogram", "populateHistogram")
+            .compute("populateHistogram", "program/post/exposure/populateHistogram", "populateHistogram")
             .overrideObject("inputTexture", inputTexture.name())
             .exportInt("histogramBins", (int) histogramBins)
             .exportFloat("minLuminance", minLuminance)
             .exportFloat("maxLuminance", maxLuminance)
             .dispatch2D(workgroupCounts.x, workgroupCounts.y);
+        
+        pipeline.stage(ProgramStage.POST_RENDER)
+            .compute("resolveLuminance", "program/post/exposure/resolveLuminance", "percentileLuminance")
+            .exportInt("histogramBins", (int) histogramBins)
+            .exportFloat("minLuminance", minLuminance)
+            .exportFloat("maxLuminance", maxLuminance)
+            .dispatch1D(1);
     }
 
 }

@@ -7,6 +7,7 @@
 
 import aperture;
 
+import lib.exposure;
 import lib.util;
 
 extern static const int histogramBins;
@@ -22,26 +23,6 @@ Texture2D inputTexture;
 // local histogram written to by each local workgroup before merging with the global histogram
 // note that the blog post uses a bin count equal to the workgroup size, rather than an independent number
 groupshared uint localHistogram[histogramBins];
-
-uint getBinIndex(float3 color) {
-    const float minLogLuminance = log2(minLuminance);
-    const float maxLogLuminance = log2(maxLuminance);
-
-    float luminance = luminance(color);
-    if (luminance < minLuminance) {
-        // avoid taking the log of 0
-        return 0;
-    }
-    
-    float logLuminance = clamp(log2(luminance), minLogLuminance, maxLogLuminance);
-
-    float normalizedLuminance = (logLuminance - minLogLuminance) / (maxLogLuminance - minLogLuminance);
-
-    uint binIndex = uint(floor(normalizedLuminance * histogramBins));
-    binIndex = min(binIndex, histogramBins - 1);
-
-    return binIndex;
-}
 
 [[numthreads(64, 1, 1)]]
 [[shader("compute")]]
@@ -63,14 +44,14 @@ void populateHistogram(uint3 globalInvocationId: SV_DispatchThreadID, uint local
 
     if (globalInvocationId.x < ap.game.renderSize.x && globalInvocationId.y < ap.game.renderSize.y) {
         float3 color = inputTexture[globalInvocationId.xy].rgb;
-        uint binIndex = getBinIndex(color);
+        uint binIndex = getBinIndex(color, minLuminance, maxLuminance, histogramBins);
 
-        __atomic_add(localHistogram[binIndex], 1);
+        InterlockedAdd(localHistogram[binIndex], 1);
     }
 
     GroupMemoryBarrierWithGroupSync();
 
     for (uint i = localInvocationIndex; i < histogramBins; i += 64) {
-        __atomic_add(histogram[i], localHistogram[i]);
+        InterlockedAdd(histogram[i], localHistogram[i]);
     }
 }
