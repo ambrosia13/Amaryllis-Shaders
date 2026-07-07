@@ -174,7 +174,7 @@ float3 raymarchScattering(
     return lum;
 }
 
-float3 getValFromSkyLUT(Texture2D skyLut, float3 rayDir, float3 sunDir) {
+float3 getValFromSkyLUT(Texture2D skyLut, float3 rayDir, float3 sunDir, float lod) {
     float3 skyViewPos = getAtmosphereViewingPos();
 
     float height = length(skyViewPos);
@@ -190,7 +190,9 @@ float3 getValFromSkyLUT(Texture2D skyLut, float3 rayDir, float3 sunDir) {
         float3 right = cross(sunDir, up);
         float3 forward = cross(up, right);
 
-        float3 projectedDir = normalize(rayDir - up * (dot(rayDir, up)));
+        // note from ambrosia13: the normalize here is not actually needed, since atan2 takes the ratio between the two.
+        // so avoiding this normalization fixes some numerical instability
+        float3 projectedDir = (rayDir - up * (dot(rayDir, up)));
         float sinTheta = dot(projectedDir, right);
         float cosTheta = dot(projectedDir, forward);
         azimuthAngle = atan2(sinTheta, cosTheta) + PI;
@@ -200,6 +202,10 @@ float3 getValFromSkyLUT(Texture2D skyLut, float3 rayDir, float3 sunDir) {
     float v = 0.5 + 0.5 * sign(altitudeAngle) * sqrt(abs(altitudeAngle) * 2.0 / PI);
     float2 uv = float2(azimuthAngle / (TAU), v);
 
-    return skyLut.Sample(apt_linearSampler, uv).rgb;
+    return skyLut.SampleLevel(apt_linearSampler, uv, lod).rgb;
+}
+
+float3 getValFromSkyLUT(Texture2D skyLut, float3 rayDir, float3 sunDir) {
+    return getValFromSkyLUT(skyLut, rayDir, sunDir, 0);
 }
 

@@ -38,7 +38,7 @@ FragmentOutput upsample(float2 pos: SV_Position) {
     int2 passSize = ap.game.renderSize >> (lod + 1);
 
     float2 uv = pos / passSize;
-    float2 distance = 1.0 / passSize;
+    float2 distance = 2.0 / passSize;
 
     float contrib = 1.0 / mipCount;
 

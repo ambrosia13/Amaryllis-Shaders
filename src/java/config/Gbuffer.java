@@ -64,6 +64,7 @@ public class Gbuffer {
 
         for (var target : deferredTargets) {
             pipeline.object(ProgramUsage.BASIC, "program/object/basic", "GbufferShader")
+                .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
                 // this is the first write, so no need to flip
                 .writes("color", mainTextures.overwrite())
                 .writes("matNormals", solidAux.matNormalsTexture)
@@ -77,6 +78,7 @@ public class Gbuffer {
             // reads from a and writes to b
             .writes("color", mainTextures.write())
             .overrideObject("solidAlbedoTexture", mainTextures.read().name())
+            .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
             .exportInt("CASCADE_COUNT", Shadow.CASCADE_COUNT);
         
         // flip after deferred pass, since it read from a and wrote to b
@@ -85,6 +87,7 @@ public class Gbuffer {
         for (var target : forwardTargets) {
             // albedo should blend normally, but aux data should not blend
             var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
+                .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
                 // since the object shader doesn't read from a texture, but just blends into the existing texture,
                 // don't use the flipped one for writing
                 .writes("color", mainTextures.overwrite())

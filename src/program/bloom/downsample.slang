@@ -49,7 +49,7 @@ FragmentOutput downsampleFirst(float2 pos: SV_Position) {
     int2 passSize = ap.game.renderSize >> lod;
 
     float2 uv = pos / passSize;
-    float2 distance = 1.0 / passSize;
+    float2 distance = 2.0 / passSize;
 
     // return FragmentOutput(float4(uv, 0.0, 1.0));
     return FragmentOutput(frx_sample13(inputTexture, uv, distance, max(0, lod - 1)));
@@ -61,7 +61,7 @@ FragmentOutput downsample(float2 pos: SV_Position) {
     int2 passSize = ap.game.renderSize >> (lod + 1);
 
     float2 uv = pos / passSize;
-    float2 distance = 1.0 / passSize;
+    float2 distance = 2.0 / passSize;
 
     return FragmentOutput(frx_sample13(inputTexture, uv, distance, max(0, lod - 1)));
 }

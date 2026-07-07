@@ -15,7 +15,7 @@ extern static const int histogramBins;
 extern static const float minLuminance; // assumed greater than zero
 extern static const float maxLuminance;
 
-extern static const float percentile = 0.75; // default median
+extern static const float percentile = 0.5; // default median
 
 StructuredBuffer<uint> histogram;
 RWStructuredBuffer<float> meteredLuminance;

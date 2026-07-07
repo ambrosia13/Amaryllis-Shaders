@@ -3,12 +3,13 @@ import aperture;
 import lib.space;
 import lib.random;
 import lib.exposure;
+import lib.color;
+import lib.agx;
 
 extern static const bool showHistogram = true;
 extern static const int histogramBins = 256;
 StructuredBuffer<uint> histogram;
 
-StructuredBuffer<float> meteredLuminance;
 
 Texture2D outputTexture;
 
@@ -19,16 +20,14 @@ float4 main(float2 pos: SV_Position) {
 
     float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 0.0).rgb;
 
-    float ev100 = automaticEV100(meteredLuminance[0], 1.0);
-    float exposure = getExposure(ev100);
+    // color = agx(color);
+    // color = agxLook(color);
+    // color = agxEotf(color);
 
-    color *= exposure;
+    color = frx_toneMap(color);
 
-    color = tanh(color);
+    color = toSrgb(color);
 
-    // color = float3(uv, 0.0);
-
-    color = pow(color, float3(1.0 / 2.2));
 
     // deubg view for histogram
     if (showHistogram) {

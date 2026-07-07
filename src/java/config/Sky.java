@@ -10,7 +10,7 @@ public class Sky {
     public static final TextureFormat skyTextureFormat = TextureFormat.RG11B10_UFLOAT;
 
     public static final int cubemapSize = 512;
-    public static final float skyAndCloudsRenderScale = 0.5f;
+    public static final float atmosphereAndCloudsRenderScale = 0.5f;
 
     // public final Texture3D cubemap;
 

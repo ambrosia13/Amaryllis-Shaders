@@ -4,8 +4,14 @@ import settings; // Contains your shader settings, both realtime and compile tim
 
 import lib.material;
 import lib.lighting;
+import lib.color;
+import lib.math;
 
 extern static const bool isTranslucentHandRendering = false;
+
+Texture2D transmittanceLookupTexture;
+Texture2D skyViewDayTexture;
+Texture2D skyViewNightTexture;
 
 struct FragmentOutput {
     float4 color;
@@ -37,6 +43,10 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
     static FragmentOutput shadeSurface(PixelData objectData, VertexOutput input) {
         float4 color = input.color;
 
+        // needed until aperture gives light attributes in 0-1 range
+        const float lmcoordLowerBound = 1.0 / 32.0;
+        const float lmcoordUpperBound = 31.0 / 32.0;
+
         Material mat = Material(
             input.normal, // vertex normal
             input.normal, // fragment normal
@@ -46,8 +56,8 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
             iris_isCutout ? 1.0 : 0.0, // sss amount
             false, // isWater
 
-            input.light.x, // blocklight
-            input.light.y, // skylight
+            linearstep(lmcoordLowerBound, lmcoordUpperBound, input.light.x), // blocklight
+            linearstep(lmcoordLowerBound, lmcoordUpperBound, input.light.y), // skylight
             input.light.z, // ambient occlusion
             0.0 // emission
         );
@@ -60,7 +70,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         ap.discardCutout(color);
 
         // gamma correct
-        color.rgb = pow(color.rgb, float3(2.2));
+        color.rgb = toLinear(color.rgb);
 
         if (iris_isTranslucent) {
             // avoid drawing translucent hand during translucent rendering
@@ -73,13 +83,20 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
             }
 
             // color.rgb = float3(saturate(dot(mat.fragNormal, normalize(ap.celestial.sunPosition))));
-            color.rgb *= lighting(input.pos, mat);
+            color.rgb *= lighting(
+                transmittanceLookupTexture,
+                skyViewDayTexture,
+                skyViewNightTexture,
+                input.pos, 
+                mat
+            );
+
             // color.rgb = input.pos / 100.0;
         }
 
         FragmentOutput output;
 
-        output.matNormals = float4(input.normal, 1.0);
+        output.matNormals = mat.packNormals();
         output.matPbr = mat.packPbr();
         output.matLight = mat.packLight();
 

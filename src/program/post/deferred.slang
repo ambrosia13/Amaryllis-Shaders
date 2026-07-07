@@ -16,7 +16,6 @@ Texture2D multiscatteringLookupTexture;
 Texture2D skyViewDayTexture;
 Texture2D skyViewNightTexture;
 
-
 struct FragmentOutput {
     float4 color;
 }
@@ -42,15 +41,21 @@ FragmentOutput main(float2 pos: SV_Position) {
 
     float3 viewDir = normalize(sceneSpacePos);
 
-
     if (depth != 0.0) {
         // color = float3(viewDir);
         // color = sceneSpacePos / 100.0;
         // color = float3(1.0, 0.0, 0.0);
-        color *= lighting(sceneSpacePos, mat);
+        color *= lighting(
+            transmittanceLookupTexture,
+            skyViewDayTexture,
+            skyViewNightTexture,
+            sceneSpacePos, 
+            mat
+        );
     } else {
         // sky!
-        color = sampleAtmosphere(skyViewDayTexture, skyViewNightTexture, viewDir);
+        color = sampleAtmosphere(skyViewDayTexture, skyViewNightTexture, viewDir, 0.0);
+        drawSunOnAtmosphere(color, transmittanceLookupTexture, viewDir);
     }
 
 

@@ -87,6 +87,7 @@ public struct Material {
 
         mat.vertexNormal.x = normalSample.x;
         mat.vertexNormal.y = normalSample.y;
+        // mat.vertexNormal.z = 0.0;
         mat.vertexNormal.z = vertexNormalSign * sqrt(saturate(1.0 - normalSampleSquared.x - normalSampleSquared.y));
         mat.vertexNormal = normalize(mat.vertexNormal);
 
