@@ -8,8 +8,10 @@ import lib.agx;
 
 extern static const bool showHistogram = true;
 extern static const int histogramBins = 256;
+extern static const float minLuminance = 0.000001;
+extern static const float maxLuminance = 2.0;
 StructuredBuffer<uint> histogram;
-
+StructuredBuffer<float> meteredLuminance;
 
 Texture2D outputTexture;
 
@@ -31,10 +33,13 @@ float4 main(float2 pos: SV_Position) {
 
     // deubg view for histogram
     if (showHistogram) {
-        float2 histogramBegin = float2(10.0);
-        float2 histogramEnd = float2(histogramBins, 64.0);
+        float sceneLuminance = meteredLuminance[0];
+        uint exposedBin = getBinIndex(sceneLuminance, minLuminance, maxLuminance, histogramBins);
 
-        float scale = 0.25;
+        float2 histogramBegin = float2(10.0);
+        float2 histogramEnd = histogramBegin + float2(histogramBins, 128.0);
+
+        float scale = 0.4;
         float2 scaledPos = pos * scale;
         
         if (all(scaledPos > histogramBegin) && all(scaledPos < histogramEnd)) {
@@ -43,11 +48,13 @@ float4 main(float2 pos: SV_Position) {
             binIndex = min(binIndex, histogramBins - 1);
 
             float count = float(histogram[binIndex]);
-            float countScale = 2048.0;
+            float countScale = 1024.0;
 
             float height = clamp(count / countScale, 0.0, histogramEnd.y - histogramBegin.y) + histogramBegin.y;
 
-            return scaledPos.y < height ? float4(1.0) : float4(0.0);
+            return scaledPos.y < height ? 
+                (binIndex == exposedBin ? float4(1.0, 0.0, 0.0, 1.0) : float4(1.0)) : 
+                float4(0.0);
         }
     }
 

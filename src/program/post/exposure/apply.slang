@@ -1,12 +1,13 @@
 import aperture;
 
 import lib.exposure;
+import lib.color;
 import lib.palette;
 
 extern static const float minEV100;
 extern static const float maxEV100;
 
-StructuredBuffer<float> meteredLuminance;
+RWStructuredBuffer<float> meteredLuminance;
 
 Texture2D inputTexture;
 
@@ -20,10 +21,18 @@ FragmentOutput main(float2 pos: SV_Position) {
 
     float4 color = inputTexture.Sample(apt_linearSampler, uv);
 
-    float sceneLuminance = meteredLuminance[0];
-    sceneLuminance = clamp(sceneLuminance, Brightnesses.NIGHT_SKY_BRIGHTNESS * 0.1, 1.0);
+    float purkinjeAmount = exp(-luminance(color.rgb) * 400.0);
 
-    float ev100 = automaticEV100(sceneLuminance, 0.0);
+    float3 darkVisionColor = purkinjeShift(color.rgb);
+    color.rgb = lerp(color.rgb, darkVisionColor, purkinjeAmount);
+
+    float sceneLuminance = meteredLuminance[0];
+    sceneLuminance = clamp(sceneLuminance, Brightnesses.NIGHT_SKY_BRIGHTNESS * 0.2, 10.0);
+
+    // write back to the buffer so other shaders can access this info
+    meteredLuminance[0] = sceneLuminance;
+
+    float ev100 = automaticEV100(sceneLuminance, 1.0);
     // ev100 = clamp(ev100, 3.0, 20.0);
 
     float exposure = getExposure(ev100);

@@ -15,7 +15,7 @@ extern static const int histogramBins;
 extern static const float minLuminance; // assumed greater than zero
 extern static const float maxLuminance;
 
-extern static const float percentile = 0.5; // default median
+extern static const float percentile = 0.75; // default median
 
 StructuredBuffer<uint> histogram;
 RWStructuredBuffer<float> meteredLuminance;
@@ -34,7 +34,7 @@ void writeMeteredLuminanceFromBin(float bin) {
     float previousLum = meteredLuminance[0];
 
     float deltaTime = ap.timing.lastFrameTime;
-    float adaptationTime = 0.5;
+    float adaptationTime = 1.0;
     float smoothingFactor = 1.0 - exp(-deltaTime / adaptationTime);
 
     if (ap.timing.frameCounter > 1) {

@@ -8,6 +8,7 @@
 import aperture;
 
 import lib.exposure;
+import lib.color;
 import lib.util;
 
 extern static const int histogramBins;
@@ -44,7 +45,9 @@ void populateHistogram(uint3 globalInvocationId: SV_DispatchThreadID, uint local
 
     if (globalInvocationId.x < ap.game.renderSize.x && globalInvocationId.y < ap.game.renderSize.y) {
         float3 color = inputTexture[globalInvocationId.xy].rgb;
-        uint binIndex = getBinIndex(color, minLuminance, maxLuminance, histogramBins);
+        float luminance = luminance(color);
+
+        uint binIndex = getBinIndex(luminance, minLuminance, maxLuminance, histogramBins);
 
         InterlockedAdd(localHistogram[binIndex], 1);
     }
