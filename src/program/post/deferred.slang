@@ -34,13 +34,14 @@ FragmentOutput main(float2 pos: SV_Position) {
     float depth = ap.opaqueDepth[uint2(pos)];
     float handDepth = ap.handDepth[uint2(pos)];
 
+    // since the deferred target includes the hand, merge with that before proceeding
+    depth = max(depth, handDepth);
+
     float3 screenSpacePos = float3(pos / ap.game.renderSize, depth);
     float3 sceneSpacePos = screenSpaceToSceneSpace(screenSpacePos);
 
     float3 viewDir = normalize(sceneSpacePos);
 
-    // since the deferred target includes the hand, merge with that before proceeding
-    depth = max(depth, handDepth);
 
     if (depth != 0.0) {
         // color = float3(viewDir);
