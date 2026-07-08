@@ -8,6 +8,7 @@ import dev.irisshaders.aperture.api.*;
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
 import dev.irisshaders.aperture.api.renderer.*;
+import mapping.BlockIdMapping;
 import util.SwapTexture2D;
 
 public class Amaryllis implements ShaderPack {
@@ -33,5 +34,28 @@ public class Amaryllis implements ShaderPack {
         rendererConfig.setShadowCascades(Shadow.CASCADE_COUNT);
         rendererConfig.setShadowDistance(160.0f);
         rendererConfig.setShadowResolution(1024);
+    }
+
+    @Override
+    public int setBlockId(IBlockState block) {
+        if (block.hasTag("minecraft:leaves")) {
+            return BlockIdMapping.FOLIAGE_ID;
+        }
+
+        if (block.getBlockId().toString().equals("minecraft:water")) {
+            return BlockIdMapping.WATER_ID;
+        }
+
+        if (
+            block.getBlockId().toString().equals("minecraft:sugar_cane") || 
+            block.getBlockId().toString().equals("minecraft:kelp_plant") || 
+            block.hasTag("minecraft:crops") || 
+            block.hasTag("minecraft:flowers") || 
+            block.hasTag("minecraft:replaceable_by_trees")
+        ) {
+            return BlockIdMapping.SURFACE_FOLIAGE_ID;
+        }
+
+        return 0;
     }
 }

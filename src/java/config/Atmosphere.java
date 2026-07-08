@@ -12,13 +12,13 @@ public class Atmosphere {
     public static final int multiscatteringLutWidth = 32;
     public static final int multiscatteringLutHeight = 32;
 
-    public static final int skyViewWidth = 400;
-    public static final int skyViewHeight = 400;
+    public static final int skyViewWidth = 512;
+    public static final int skyViewHeight = 512;
 
     // max lod minus 0.75, for a nice blend between directional color and uniform brightness
     public static final float skyLutLightSampleLod = (float) Math.floor(
         Math.log((double) Math.min(skyViewWidth, skyViewHeight)) / Math.log(2.0)
-    ) - 0.75f;
+    ) - 1.5f;
 
     // values are kept between 0-1, so we can use 16 bit for extra precision in this range
     public static final TextureFormat transmittanceLutFormat = TextureFormat.RGBA16_UNORM;
@@ -52,7 +52,7 @@ public class Atmosphere {
             .size(skyViewWidth, skyViewHeight)
             .usesMipmaps() 
             .create();
-        
+                
         // workgroup size is 8x8, so divide by texture size to get workgroup count
         // note that texture size is explicitly divisible by 8 to avoid overdraw complications
         pipeline.stage(ProgramStage.SCREEN_SETUP)

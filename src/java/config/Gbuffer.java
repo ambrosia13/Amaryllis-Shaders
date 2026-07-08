@@ -4,6 +4,7 @@ import org.joml.Vector4f;
 
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
+import mapping.BlockIdMapping;
 import util.SwapTexture2D;
 
 public class Gbuffer {
@@ -63,24 +64,28 @@ public class Gbuffer {
         ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT };
 
         for (var target : deferredTargets) {
-            pipeline.object(ProgramUsage.BASIC, "program/object/basic", "GbufferShader")
+            var builder = pipeline.object(ProgramUsage.BASIC, "program/object/basic", "GbufferShader")
                 .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
                 // this is the first write, so no need to flip
                 .writes("color", mainTextures.overwrite())
                 .writes("matNormals", solidAux.matNormalsTexture)
                 .writes("matPbr", solidAux.matPbrTexture)
                 .writes("matLight", solidAux.matLightTexture);
+            
+            BlockIdMapping.exportAllIds(builder);
         }
 
         // do deferred shading in pre-translucent stage
-        pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-            .composite("deferred", "program/post/deferred", "main")
+        var deferredBuilder = pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
+            .composite("deferred", "program/object/deferred", "main")
             // reads from a and writes to b
             .writes("color", mainTextures.write())
             .overrideObject("solidAlbedoTexture", mainTextures.read().name())
             .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
             .exportInt("CASCADE_COUNT", Shadow.CASCADE_COUNT);
         
+        BlockIdMapping.exportAllIds(deferredBuilder);
+
         // flip after deferred pass, since it read from a and wrote to b
         mainTextures.flip();
 
@@ -99,6 +104,8 @@ public class Gbuffer {
             if (target == ProgramUsage.TRANSLUCENT_HAND) {
                 builder.exportBool("isTranslucentHandRendering", true);
             }
+
+            BlockIdMapping.exportAllIds(builder);
         }
 
 

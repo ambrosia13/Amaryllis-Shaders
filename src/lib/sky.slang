@@ -4,17 +4,21 @@ import lib.atmosphere;
 import lib.palette;
 import lib.util;
 
-// for when the sky view LUTs aren't enough, like when you're outside the atmosphere looking inwards
+// for when the sky view LUTs aren't enough, like when you're outside the atmosphere looking inwards, or for fog
 public float3 raymarchAtmosphere(
     Texture2D transmittanceLut,
     Texture2D multiscatteringLut,
     float3 rayPos,
-    float3 rayDir
+    float3 rayDir,
+    float mieAmount,
+    float tMax,
+    out float3 transmittance
 ) {
     float atmoDist = rayIntersectSphere(rayPos, rayDir, atmosphereRadiusMM);
     float groundDist = rayIntersectSphere(rayPos, rayDir, groundRadiusMM);
 
-    float tMax = select(groundDist < 0.0, atmoDist, groundDist);
+    // transform world units to atmosphere units
+    tMax = min(tMax, atmoDist);
 
     float3 dayContribution = raymarchScattering(
         transmittanceLut, 
@@ -23,9 +27,10 @@ public float3 raymarchAtmosphere(
         rayDir, 
         getSunVector(), 
         Colors.SUN_COLOR, 
-        1.0, 
+        mieAmount, 
         tMax, 
-        float(numScatteringSteps)
+        float(numScatteringSteps),
+        transmittance,
     );
 
     float3 nightContribution = Brightnesses.NIGHT_SKY_BRIGHTNESS * Colors.NIGHT_COLOR * raymarchScattering(
@@ -35,9 +40,10 @@ public float3 raymarchAtmosphere(
         rayDir, 
         getMoonVector(), 
         Colors.MOON_COLOR, 
-        1.0, 
+        mieAmount, 
         tMax, 
-        float(numScatteringSteps)
+        float(numScatteringSteps),
+        transmittance
     );
 
     return Brightnesses.ATMOSPHERE_BRIGHTNESS * (dayContribution + nightContribution);

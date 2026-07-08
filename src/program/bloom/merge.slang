@@ -17,7 +17,7 @@ FragmentOutput main(float2 pos: SV_Position) {
     float4 color = inputTexture.Sample(apt_linearSampler, uv);
     float4 bloomyColor = frx_sampleTent(bloomUpsampleTexture, uv, distance, 0);
 
-    float bloomAmount = 0.1;
+    float bloomAmount = 0.2;
 
     return FragmentOutput(lerp(color, bloomyColor, bloomAmount));
 }

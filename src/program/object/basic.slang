@@ -6,6 +6,7 @@ import lib.material;
 import lib.lighting;
 import lib.color;
 import lib.math;
+import lib.blockIds;
 
 extern static const bool isTranslucentHandRendering = false;
 
@@ -27,6 +28,7 @@ struct VertexOutput {
     float2 uv : TEXCOORD;
     float3 normal;
     float3 light;
+    nointerpolation int blockId;
 }
 
 struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
@@ -38,6 +40,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         output.color = v.color();
         output.normal = v.normal().orElse(-normalize(pos.xyz));
         output.light = float3(v.lightCoord(), v.vertexAO().orElse(1.0));
+        output.blockId = v.blockID().hasValue ? v.blockID().value.data.customId : 0;
     }
 
     static FragmentOutput shadeSurface(PixelData objectData, VertexOutput input) {
@@ -53,14 +56,17 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
 
             0.04, // reflectance
             1.0, // roughness
-            iris_isCutout ? 1.0 : 0.0, // sss amount
-            false, // isWater
+            input.blockId == SURFACE_FOLIAGE_ID || input.blockId == FOLIAGE_ID ? 1.0 : 0.0, // sss amount
+            input.blockId == WATER_ID, // isWater
 
             linearstep(lmcoordLowerBound, lmcoordUpperBound, input.light.x), // blocklight
             linearstep(lmcoordLowerBound, lmcoordUpperBound, input.light.y), // skylight
             input.light.z, // ambient occlusion
             0.0 // emission
         );
+
+        // provides more natural looking falloff
+        mat.skyLight *= mat.skyLight;
 
         if (let texture = objectData.albedo()) { // Since `albedo()` returns an Optional<Sampleable>, this is one of a few ways to get the true type. You can also do albedo().hasValue and albedo().value, of course.
             color *= texture.sampleTexture(input.uv); // Some objects simply don't have a texture, such as clouds.

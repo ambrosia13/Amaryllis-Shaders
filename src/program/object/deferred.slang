@@ -42,9 +42,6 @@ FragmentOutput main(float2 pos: SV_Position) {
     float3 viewDir = normalize(sceneSpacePos);
 
     if (depth != 0.0) {
-        // color = float3(viewDir);
-        // color = sceneSpacePos / 100.0;
-        // color = float3(1.0, 0.0, 0.0);
         color *= lighting(
             transmittanceLookupTexture,
             skyViewDayTexture,

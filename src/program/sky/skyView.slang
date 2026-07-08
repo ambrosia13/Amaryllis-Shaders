@@ -58,6 +58,7 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
 
     float tMax = select(groundDist < 0.0, atmoDist, groundDist);
 
+    float3 transmittance; //ignored
     float3 dayColor = raymarchScattering(
         transmittanceLookupTexture, 
         multiscatteringLookupTexture, 
@@ -67,7 +68,8 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
         Colors.SUN_COLOR, 
         1.0,
         tMax, 
-        float(numScatteringSteps)
+        float(numScatteringSteps),
+        transmittance
     );
 
     float3 nightColor = raymarchScattering(
@@ -79,7 +81,8 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
         Colors.MOON_COLOR, 
         1.0,
         tMax, 
-        float(numScatteringSteps)
+        float(numScatteringSteps),
+        transmittance
     );
 
     skyViewDayTexture.Store(globalInvocationId.xy, float4(dayColor, 1.0));

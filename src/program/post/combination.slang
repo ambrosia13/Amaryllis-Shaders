@@ -20,7 +20,7 @@ float4 main(float2 pos: SV_Position) {
     float2 uv = pos / ap.game.renderSize;
     uint2 coord = uint2(pos);
 
-    float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 0.0).rgb;
+    float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 3.0).rgb;
 
     // color = agx(color);
     // color = agxLook(color);
@@ -30,9 +30,10 @@ float4 main(float2 pos: SV_Position) {
 
     color = toSrgb(color);
 
-
     // deubg view for histogram
     if (showHistogram) {
+        float debugViewAlpha = 0.7;
+
         float sceneLuminance = meteredLuminance[0];
         uint exposedBin = getBinIndex(sceneLuminance, minLuminance, maxLuminance, histogramBins);
 
@@ -52,9 +53,11 @@ float4 main(float2 pos: SV_Position) {
 
             float height = clamp(count / countScale, 0.0, histogramEnd.y - histogramBegin.y) + histogramBegin.y;
 
-            return scaledPos.y < height ? 
-                (binIndex == exposedBin ? float4(1.0, 0.0, 0.0, 1.0) : float4(1.0)) : 
-                float4(0.0);
+            float3 histogramColor = scaledPos.y < height ? 
+                (binIndex == exposedBin ? float3(1.0, 0.0, 0.0) : float3(1.0)) : 
+                float3(0.0);
+            
+            color = lerp(color, histogramColor, debugViewAlpha);
         }
     }
 

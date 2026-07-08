@@ -8,8 +8,15 @@ import util.SwapTexture2D;
 
 public class PostPasses {
     public static void setup(Screen screen, PipelineConfig pipeline, Atmosphere atmosphere, Gbuffer gbuffer, SwapTexture2D mainTextures) {
+        // effect pass - for things like reflections and fog
+        pipeline.stage(ProgramStage.POST_RENDER)
+            .composite("effect", "program/post/effect", "main")
+            .overrideObject("inputTexture", mainTextures.read().name())
+            .writes("color", mainTextures.write());
+        
+        mainTextures.flip();;
+
         // run the exposure metering near the end of teh pipeline
-        // the exposure pass doesn't modify the image; just calculates its exposure, so no need to flip here
         var exposure = new Exposure(screen, pipeline, mainTextures.read(), mainTextures.write());
 
         mainTextures.flip();

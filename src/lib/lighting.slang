@@ -10,6 +10,9 @@ import lib.palette;
 
 extern static const float skyLutLightSampleLod = 0.0;
 
+static const uint sssSamples = 4;
+static const float sssDepth = 1.0;
+
 public float3 lighting(
     Texture2D transmittanceLut,
     Texture2D skyLutDay,
@@ -29,26 +32,40 @@ public float3 lighting(
     lighting += Brightnesses.BLOCKLIGHT_BRIGHTNESS * blockLightColor + ambientLightColor;
     lighting *= mat.ambientOcclusion;
 
-    float sampledShadowFactor = shadowVisibility(sceneSpacePos);
-    
     // moon or sun depending on which is higher in the sky
     float3 sunVector = getSunVector();
     float3 lightVector = sunVector * sign(sunVector.y);
-
     float shadowSunsetFadeFactor = smoothstep(0.01, 0.05, lightVector.y);
-    
+
+    float sampledShadowFactor = shadowVisibility(sceneSpacePos);
+
+    float sssDistance = 0.0;
+    float lightOpticalDepth = 0.0;
+
+    if (mat.sssAmount != 0.0) {
+        for (uint i = 0; i < sssSamples; i++) {
+            sssDistance += (sssDepth * mat.sssAmount) / sssSamples;
+            float sssShadowFactor = shadowVisibility(sceneSpacePos + lightVector * sssDistance);
+
+            lightOpticalDepth += sssShadowFactor / sssSamples;
+        }
+    }   
+
+    float sssTransmittance = exp(-lightOpticalDepth);
+
     float shadowFactor = sampledShadowFactor * shadowSunsetFadeFactor;
     
     float NdotL = saturate(dot(mat.fragNormal, lightVector));
     NdotL *= float(dot(mat.vertexNormal, lightVector) >= 0.0);
 
-    // NdotL = lerp(NdotL, 1.0, mat.sssAmount)
+    shadowFactor *= NdotL;
+    shadowFactor = lerp(1.0, shadowFactor, sssTransmittance);
 
     float3 directLightColor = (
         sunVector.y >= 0.0 ? Brightnesses.SUNLIGHT_BRIGHTNESS * Colors.SUN_COLOR : Brightnesses.MOONLIGHT_BRIGHTNESS * Colors.MOON_COLOR
     ) * getValFromTLUT(transmittanceLut, atmosphereSpacePos, lightVector);
 
-    lighting += directLightColor * shadowFactor * NdotL;
+    lighting += directLightColor * shadowFactor;
 
     return lighting;
 }
