@@ -30,6 +30,10 @@ public float3 lighting(
 
     float3 atmosphereSpacePos = getAtmosphereViewingPos() + 1e-6 * sceneSpacePos * minecraftToAtmosphereUnitScale;
     float3 atmosphereAmbientColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * getValFromSkyLUT(skyView, mat.fragNormal, sunVector, skyLutLightSampleLod);
+    float3 atmosphereTopColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * getValFromSkyLUT(skyView, float3(0, 1, 0), sunVector, skyLutLightSampleLod);
+
+    // materials with sss should have more uniform looking lighting across faces
+    atmosphereAmbientColor = lerp(atmosphereAmbientColor, atmosphereTopColor, mat.sssAmount);
 
     float3 ambientLightColor = Brightnesses.CAVE_BRIGHTNESS + atmosphereAmbientColor * mat.skyLight;
     float3 blockLightColor = float3(1.0, 0.5, 0.25) * mat.blockLight;
