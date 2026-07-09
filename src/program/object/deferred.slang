@@ -3,6 +3,7 @@ import aperture;
 import lib.material;
 import lib.lighting;
 import lib.space;
+import lib.atmosphere;
 import lib.sky;
 import lib.util;
 
@@ -13,8 +14,7 @@ Texture2D<float4> solidMatLightTexture;
 
 Texture2D transmittanceLookupTexture;
 Texture2D multiscatteringLookupTexture;
-Texture2D skyViewDayTexture;
-Texture2D skyViewNightTexture;
+Texture2D skyViewTexture;
 
 struct FragmentOutput {
     float4 color;
@@ -46,15 +46,14 @@ FragmentOutput main(float2 pos: SV_Position) {
     if (depth != 0.0) {
         color *= lighting(
             transmittanceLookupTexture,
-            skyViewDayTexture,
-            skyViewNightTexture,
+            skyViewTexture,
             coord,
             sceneSpacePos, 
             mat
         );
     } else {
         // sky!
-        color = sampleAtmosphere(skyViewDayTexture, skyViewNightTexture, viewDir, 0.0);
+        color = getValFromSkyLUT(skyViewTexture, viewDir, getSunVector());
         drawSunOnAtmosphere(color, transmittanceLookupTexture, viewDir);
     }
 

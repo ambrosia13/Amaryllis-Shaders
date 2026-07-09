@@ -31,8 +31,7 @@ public class Atmosphere {
     public final Texture2D multiscatteringLookupTexture;
 
     // written every frame
-    public final Texture2D skyViewDayTexture;
-    public final Texture2D skyViewNightTexture;
+    public final Texture2D skyViewTexture;
 
     public Atmosphere(PipelineConfig pipeline) {
         transmittanceLookupTexture = pipeline.texture2D( "transmittanceLookupTexture", transmittanceLutFormat)
@@ -43,14 +42,9 @@ public class Atmosphere {
             .size(multiscatteringLutWidth, multiscatteringLutHeight)
             .create();
         
-        skyViewDayTexture = pipeline.texture2D( "skyViewDayTexture", skyViewTextureFormat)
+        skyViewTexture = pipeline.texture2D( "skyViewTexture", skyViewTextureFormat)
             .size(skyViewWidth, skyViewHeight)
             .usesMipmaps() // workaround to get average sky color
-            .create();
-        
-        skyViewNightTexture = pipeline.texture2D( "skyViewNightTexture", skyViewTextureFormat)
-            .size(skyViewWidth, skyViewHeight)
-            .usesMipmaps() 
             .create();
                 
         // workgroup size is 8x8, so divide by texture size to get workgroup count
@@ -75,6 +69,6 @@ public class Atmosphere {
         
         // workaround to get avg sky color
         pipeline.stage(ProgramStage.PRE_RENDER)
-            .generateMips(skyViewDayTexture, skyViewNightTexture);
+            .generateMips(skyViewTexture);
     }
 }

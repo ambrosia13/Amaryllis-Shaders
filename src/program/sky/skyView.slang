@@ -16,8 +16,7 @@ extern static const uint skyViewHeight;
 Texture2D transmittanceLookupTexture;
 Texture2D multiscatteringLookupTexture;
 
-RWTexture2D<float4> skyViewDayTexture;
-RWTexture2D<float4> skyViewNightTexture;
+RWTexture2D<float4> skyViewTexture;
 
 [[numthreads(8, 8, 1)]]
 [[shader("compute")]]
@@ -50,8 +49,9 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
     float sunAltitude = (0.5 * PI) - acos(dot(getSunVector(), up));
     float3 sunDir = float3(0.0, sin(sunAltitude), -cos(sunAltitude));
 
-    float moonAltitude = (0.5 * PI) - acos(dot(getMoonVector(), up));
-    float3 moonDir = float3(0.0, sin(moonAltitude), -cos(moonAltitude));
+    // float moonAltitude = (0.5 * PI) - acos(dot(getMoonVector(), up));
+    // float3 moonDir = float3(0.0, sin(moonAltitude), -cos(moonAltitude));
+    float3 moonDir = -sunDir; // doing it this way allows the day and night sky to live on the same texture!!
 
     float atmoDist = rayIntersectSphere(skyViewPos, rayDir, atmosphereRadiusMM);
     float groundDist = rayIntersectSphere(skyViewPos, rayDir, groundRadiusMM);
@@ -85,6 +85,9 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
         transmittance
     );
 
-    skyViewDayTexture.Store(globalInvocationId.xy, float4(dayColor, 1.0));
-    skyViewNightTexture.Store(globalInvocationId.xy, float4(nightColor, 1.0));
+    float3 skyColor = Brightnesses.ATMOSPHERE_BRIGHTNESS * (
+        dayColor + Brightnesses.NIGHT_SKY_BRIGHTNESS * Colors.NIGHT_COLOR * nightColor
+    );
+
+    skyViewTexture.Store(globalInvocationId.xy, float4(skyColor, 1.0));
 }
