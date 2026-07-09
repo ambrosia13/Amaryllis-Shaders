@@ -31,9 +31,9 @@ public class Amaryllis implements ShaderPack {
     @Override
     public void configureRenderer(RendererConfig rendererConfig) {
         rendererConfig.setSunPathRotation(40.0f);
-        rendererConfig.setShadowCascades(Shadow.CASCADE_COUNT);
+        rendererConfig.setShadowCascades(Shadow.cascadeCount);
         rendererConfig.setShadowDistance(160.0f);
-        rendererConfig.setShadowResolution(1024);
+        rendererConfig.setShadowResolution(Shadow.size);
     }
 
     @Override

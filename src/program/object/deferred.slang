@@ -22,16 +22,18 @@ struct FragmentOutput {
 
 [[shader("pixel")]]
 FragmentOutput main(float2 pos: SV_Position) {
-    float3 color = solidAlbedoTexture[uint2(pos)].rgb;
+    int2 coord = int2(pos);
 
-    float4 matNormalsSample = solidMatNormalsTexture[uint2(pos)];
-    uint4 matPbrSample = solidMatPbrTexture[uint2(pos)];
-    float4 matLightSample = solidMatLightTexture[uint2(pos)];
+    float3 color = solidAlbedoTexture[coord].rgb;
+
+    float4 matNormalsSample = solidMatNormalsTexture[coord];
+    uint4 matPbrSample = solidMatPbrTexture[coord];
+    float4 matLightSample = solidMatLightTexture[coord];
 
     Material mat = Material.unpack(matNormalsSample, matPbrSample, matLightSample);
 
-    float depth = ap.opaqueDepth[uint2(pos)];
-    float handDepth = ap.handDepth[uint2(pos)];
+    float depth = ap.opaqueDepth[coord];
+    float handDepth = ap.handDepth[coord];
 
     // since the deferred target includes the hand, merge with that before proceeding
     depth = max(depth, handDepth);
@@ -46,6 +48,7 @@ FragmentOutput main(float2 pos: SV_Position) {
             transmittanceLookupTexture,
             skyViewDayTexture,
             skyViewNightTexture,
+            coord,
             sceneSpacePos, 
             mat
         );

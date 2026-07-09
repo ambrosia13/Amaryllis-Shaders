@@ -17,13 +17,15 @@ public float3 lighting(
     Texture2D transmittanceLut,
     Texture2D skyLutDay,
     Texture2D skyLutNight,
+    int2 coord,
     float3 sceneSpacePos, 
     Material mat
 ) {
     float3 lighting = float3(0.0);
 
-    float3 atmosphereSpacePos = getAtmosphereViewingPos() + 1e-6 * sceneSpacePos * minecraftToAtmosphereUnitScale;
+    float distance = length(sceneSpacePos);
 
+    float3 atmosphereSpacePos = getAtmosphereViewingPos() + 1e-6 * sceneSpacePos * minecraftToAtmosphereUnitScale;
     float3 atmosphereAmbientColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * sampleAtmosphere(skyLutDay, skyLutNight, mat.fragNormal, skyLutLightSampleLod);
 
     float3 ambientLightColor = Brightnesses.CAVE_BRIGHTNESS + atmosphereAmbientColor * mat.skyLight;
@@ -37,7 +39,7 @@ public float3 lighting(
     float3 lightVector = sunVector * sign(sunVector.y);
     float shadowSunsetFadeFactor = smoothstep(0.01, 0.05, lightVector.y);
 
-    float sampledShadowFactor = shadowVisibility(sceneSpacePos);
+    float sampledShadowFactor = shadowVisibility(coord, sceneSpacePos, distance, mat);
 
     float sssDistance = 0.0;
     float lightOpticalDepth = 0.0;
@@ -45,7 +47,7 @@ public float3 lighting(
     if (mat.sssAmount != 0.0) {
         for (uint i = 0; i < sssSamples; i++) {
             sssDistance += (sssDepth * mat.sssAmount) / sssSamples;
-            float sssShadowFactor = shadowVisibility(sceneSpacePos + lightVector * sssDistance);
+            float sssShadowFactor = shadowVisibility(coord, sceneSpacePos + lightVector * sssDistance, distance, mat);
 
             lightOpticalDepth += sssShadowFactor / sssSamples;
         }

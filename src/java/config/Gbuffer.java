@@ -64,8 +64,10 @@ public class Gbuffer {
         ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT };
 
         for (var target : deferredTargets) {
-            var builder = pipeline.object(ProgramUsage.BASIC, "program/object/basic", "GbufferShader")
+            var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
                 .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
+                .exportInt("shadowCascadeCount", Shadow.cascadeCount)
+                .exportInt("shadowMapSize", Shadow.size)
                 // this is the first write, so no need to flip
                 .writes("color", mainTextures.overwrite())
                 .writes("matNormals", solidAux.matNormalsTexture)
@@ -82,8 +84,9 @@ public class Gbuffer {
             .writes("color", mainTextures.write())
             .overrideObject("solidAlbedoTexture", mainTextures.read().name())
             .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
-            .exportInt("CASCADE_COUNT", Shadow.CASCADE_COUNT);
-        
+            .exportInt("shadowCascadeCount", Shadow.cascadeCount)
+            .exportInt("shadowMapSize", Shadow.size);
+                 
         BlockIdMapping.exportAllIds(deferredBuilder);
 
         // flip after deferred pass, since it read from a and wrote to b
@@ -93,17 +96,14 @@ public class Gbuffer {
             // albedo should blend normally, but aux data should not blend
             var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
                 .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
+                .exportInt("shadowCascadeCount", Shadow.cascadeCount)
+                .exportInt("shadowMapSize", Shadow.size)
                 // since the object shader doesn't read from a texture, but just blends into the existing texture,
                 // don't use the flipped one for writing
                 .writes("color", mainTextures.overwrite())
                 .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
                 .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
                 .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
-
-            // for translucent hand specifically, we want to set a flag to avoid a hazardous read
-            if (target == ProgramUsage.TRANSLUCENT_HAND) {
-                builder.exportBool("isTranslucentHandRendering", true);
-            }
 
             BlockIdMapping.exportAllIds(builder);
         }

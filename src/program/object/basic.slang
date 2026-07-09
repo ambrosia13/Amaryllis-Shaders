@@ -8,8 +8,6 @@ import lib.color;
 import lib.math;
 import lib.blockIds;
 
-extern static const bool isTranslucentHandRendering = false;
-
 Texture2D transmittanceLookupTexture;
 Texture2D skyViewDayTexture;
 Texture2D skyViewNightTexture;
@@ -79,20 +77,14 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         color.rgb = toLinear(color.rgb);
 
         if (iris_isTranslucent) {
-            // avoid drawing translucent hand during translucent rendering
-            if (!isTranslucentHandRendering) {
-                float handDepth = ap.handDepth[uint2(objectData.screenPos.xy)];
-
-                if (handDepth != 0.0) {
-                    discard;
-                }
-            }
+            int2 coord = int2(objectData.screenPos.xy);
 
             // color.rgb = float3(saturate(dot(mat.fragNormal, normalize(ap.celestial.sunPosition))));
             color.rgb *= lighting(
                 transmittanceLookupTexture,
                 skyViewDayTexture,
                 skyViewNightTexture,
+                coord,
                 input.pos, 
                 mat
             );
