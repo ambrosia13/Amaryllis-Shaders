@@ -3,6 +3,7 @@ public module sky;
 import lib.atmosphere;
 import lib.palette;
 import lib.util;
+import lib.clouds;
 
 // for when the sky view LUTs aren't enough, like when you're outside the atmosphere looking inwards, or for fog
 public float3 raymarchAtmosphere(
@@ -12,6 +13,7 @@ public float3 raymarchAtmosphere(
     float3 rayDir,
     float mieAmount,
     float tMax,
+    int numSteps,
     out float3 transmittance
 ) {
     float atmoDist = rayIntersectSphere(rayPos, rayDir, atmosphereRadiusMM);
@@ -29,7 +31,7 @@ public float3 raymarchAtmosphere(
         Colors.SUN_COLOR, 
         mieAmount, 
         tMax, 
-        float(numScatteringSteps),
+        numSteps,
         transmittance,
     );
 
@@ -42,7 +44,7 @@ public float3 raymarchAtmosphere(
         Colors.MOON_COLOR, 
         mieAmount, 
         tMax, 
-        float(numScatteringSteps),
+        numSteps,
         transmittance
     );
 
@@ -78,4 +80,36 @@ void drawSunOnAtmosphere(inout float3 atmosphere, Texture2D transmittanceLut, fl
 
     atmosphere += Brightnesses.SUN_BRIGHTNESS * sunDisk * Colors.SUN_COLOR * transmittance;
     atmosphere += Brightnesses.MOON_BRIGHTNESS * moonDisk * Colors.MOON_COLOR * transmittance;
+}
+
+void drawCloudsOnAtmosphere<T: CloudType>(
+    inout float3 atmosphere, 
+    Texture2D transmittanceLut, 
+    Texture2D skyLut, 
+    float3 viewDir,
+    float2 cloudsTransmittanceAndScattering,
+) {
+    float3 skyViewPos = getAtmosphereViewingPos();
+
+    float3 sunVector = getSunVector();
+    float3 moonVector = getMoonVector();
+
+    float3 cloudPos = float3(0.0, skyViewPos.y + T.altitude() * 1e-6, 0.0);
+
+    float3 sunTransmittance = getValFromTLUT(transmittanceLut, cloudPos, sunVector);
+    float3 moonTransmittance = getValFromTLUT(transmittanceLut, cloudPos, moonVector);
+
+    float3 scatteringColor = 
+        Brightnesses.SUNLIGHT_BRIGHTNESS * Colors.SUN_COLOR * sunTransmittance + 
+        Brightnesses.NIGHT_SKY_BRIGHTNESS * Brightnesses.MOONLIGHT_BRIGHTNESS * Colors.MOON_COLOR * moonTransmittance;
+    
+    float3 ambientCloudColor = getValFromSkyLUT(skyLut, float3(1.0), getSunVector());
+
+    float3 cloudScattering = cloudsTransmittanceAndScattering.y * scatteringColor
+        * (1.0 + (getMiePhase(dot(viewDir, sunVector), 0.7) + getMiePhase(dot(viewDir, moonVector), 0.7)))
+        + ambientCloudColor;
+    
+    float3 cloudyAtmosphere = lerp(cloudScattering, atmosphere, cloudsTransmittanceAndScattering.x);
+
+    atmosphere = lerp(atmosphere, cloudyAtmosphere, smoothstep(0.0, 0.1, viewDir.y));
 }

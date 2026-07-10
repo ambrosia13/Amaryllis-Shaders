@@ -18,6 +18,9 @@ Texture2D multiscatteringLookupTexture;
 
 RWTexture2D<float4> skyViewTexture;
 
+// number of steps to use for sky view
+static const int numScatteringSteps = 32;
+
 [[numthreads(8, 8, 1)]]
 [[shader("compute")]]
 void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {

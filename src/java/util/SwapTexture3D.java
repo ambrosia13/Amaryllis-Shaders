@@ -2,10 +2,8 @@ package util;
 
 import java.util.function.Consumer;
 
-import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.Texture3D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
-import dev.irisshaders.aperture.api.objects.UnbuiltTexture2D;
 import dev.irisshaders.aperture.api.objects.UnbuiltTexture3D;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 

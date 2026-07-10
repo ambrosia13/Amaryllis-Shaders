@@ -1,7 +1,6 @@
-import org.joml.Vector4f;
-
 import config.Atmosphere;
 import config.Gbuffer;
+import config.NoiseTextures;
 import config.PostPasses;
 import config.Shadow;
 import dev.irisshaders.aperture.api.*;
@@ -21,6 +20,8 @@ public class Amaryllis implements ShaderPack {
             TextureFormat.RGBA16_SFLOAT, 
             tex -> tex.renderSize()
         );
+
+        NoiseTextures.load(pipeline);
 
         Shadow.setup(pipeline);
         var atmosphere = new Atmosphere(pipeline);

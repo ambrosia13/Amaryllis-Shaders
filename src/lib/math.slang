@@ -13,3 +13,10 @@ public vector<float, N> pow2<uint N>(vector<float, N> x) {
 public vector<float, N> linearstep<uint N>(float a, float b, vector<float, N> x) {
     return saturate((x - a) / (b - a));
 }
+
+// Angle should be in radians
+float2x2 rotationMatrix(float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return float2x2(c, s, -s, c);
+}

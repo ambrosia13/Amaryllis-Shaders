@@ -7,6 +7,7 @@ import lib.util;
 import lib.sky;
 import lib.atmosphere;
 import lib.palette;
+import lib.random;
 
 extern static const float skyLutLightSampleLod = 0.0;
 
@@ -22,11 +23,14 @@ public float3 lighting(
 ) {
     float3 lighting = float3(0.0);
 
+    Random<Ign> random = Random<Ign>(Ign(coord, ap.timing.frameCounter));
+
     float distance = length(sceneSpacePos);
 
     // moon or sun depending on which is higher in the sky
     float3 sunVector = getSunVector();
     float3 lightVector = sunVector * sign(sunVector.y);
+    float shadowSunsetFadeFactor = smoothstep(0.01, 0.05, lightVector.y);
 
     float3 atmosphereSpacePos = getAtmosphereViewingPos() + 1e-6 * sceneSpacePos * minecraftToAtmosphereUnitScale;
     float3 atmosphereAmbientColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * getValFromSkyLUT(skyView, mat.fragNormal, sunVector, skyLutLightSampleLod);
@@ -41,9 +45,10 @@ public float3 lighting(
     lighting += Brightnesses.BLOCKLIGHT_BRIGHTNESS * blockLightColor + ambientLightColor;
     lighting *= mat.ambientOcclusion;
 
-    float shadowSunsetFadeFactor = smoothstep(0.01, 0.05, lightVector.y);
-
-    float sampledShadowFactor = shadowVisibility(coord, sceneSpacePos, distance, mat);
+    float basePenumbraSize = 1.0;
+    float4 shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos, distance, mat);
+    
+    float sampledShadowFactor = shadowVisibility(random, shadowViewSpacePos, basePenumbraSize, lightVector, mat);
 
     float sssDistance = 0.0;
     float lightOpticalDepth = 0.0;
@@ -51,7 +56,9 @@ public float3 lighting(
     if (mat.sssAmount != 0.0) {
         for (uint i = 0; i < sssSamples; i++) {
             sssDistance += (sssDepth * mat.sssAmount) / sssSamples;
-            float sssShadowFactor = shadowVisibility(coord, sceneSpacePos + lightVector * sssDistance, distance, mat);
+
+            shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos + lightVector * sssDistance, distance, mat);
+            float sssShadowFactor = shadowVisibility(random, shadowViewSpacePos, basePenumbraSize + float(i) * 4.0, lightVector, mat);
 
             lightOpticalDepth += sssShadowFactor / sssSamples;
         }

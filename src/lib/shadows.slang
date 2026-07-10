@@ -10,8 +10,15 @@ import lib.material;
 extern static const int shadowCascadeCount;
 extern static const int shadowMapSize;
 
-static bool projectShadow(float4 lightView, uint cascade, out float2 uv, out float depth) {
-    float4 clip = mul(ap.celestial.projection[cascade], lightView);
+public float4 setupShadowViewSpacePos(float3 sceneSpacePos, float distance, Material mat) {
+    // variable bias based on distance
+    // TODO: find a better heuristic
+    sceneSpacePos += mat.vertexNormal * (0.05 + 0.9 * (1.0 - exp(-distance * 0.01)));
+    return mul(ap.celestial.view, float4(sceneSpacePos, 1.0));
+}
+
+bool projectShadow(float4 shadowViewSpacePos, uint cascade, out float2 uv, out float depth) {
+    float4 clip = mul(ap.celestial.projection[cascade], shadowViewSpacePos);
 
     if (!isfinite(clip.w) || abs(clip.w) < 0.00001) {
         return false;
@@ -24,23 +31,23 @@ static bool projectShadow(float4 lightView, uint cascade, out float2 uv, out flo
     return all(shadowPos >= 0.0 && shadowPos <= 1.0);
 }
 
-static float shadowVisibility(int2 coord, float3 sceneSpacePos, float distance, Material mat) {
+// float blockerSearch()
+
+public float shadowVisibility<R: Rng>(
+    inout Random<R> random, 
+    float4 shadowViewSpacePos, 
+    float basePenumbraSize, 
+    float3 lightVector, 
+    Material mat
+) {
     uint cascadeCount = min(shadowCascadeCount, max(1u, ap.celestial.cascadeCount));
 
-    // variable bias based on distance
-    // TODO: find a better heuristic
-    sceneSpacePos += mat.vertexNormal * (0.05 + 0.9 * (1.0 - exp(-distance * 0.01)));
-    float4 shadowViewSpacePos = mul(ap.celestial.view, float4(sceneSpacePos, 1.0));
-
-    const float shadowSampleOffsetFactor = 1024.0; // ensures consistent perceptual shadow softness across different shadow resolutions
+    // ensures resolutions less than 2048x have the same perceptual sharpness,
+    // but resolutions greater than 2048x are blueed less to achieve even more sharpness
+    float shadowSampleOffsetFactor = shadowMapSize < 2048 ? 1024 : float(shadowMapSize); 
+    
     const float blockerSearchRangeMultiplier = 2.0; // take samples with twice the range for blocker search than for final filtering
     const uint shadowFilterSamples = 4; // 4 is good enough for small constant penumbra size
-
-    // the back faces of subsurface scattering materials should have a wider penumbra to give the "diffused" look
-    float basePenumbraSize = 1.0 + 4.0 * mat.sssAmount * float(dot(mat.vertexNormal, getLightVector()) < 0.0);
-
-    // Ign ign = Ign(coord, ap.timing.frameCounter);
-    Random<Ign> random = Random<Ign>(Ign(coord, ap.timing.frameCounter));
 
     float2 uv;
     float depth;
@@ -58,5 +65,5 @@ static float shadowVisibility(int2 coord, float3 sceneSpacePos, float distance, 
         }
     }
 
-    return 1.0;
+    return float(dot(mat.fragNormal, getLightVector()) > 0.0);
 }

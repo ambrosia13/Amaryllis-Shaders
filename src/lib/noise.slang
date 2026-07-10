@@ -1,0 +1,149 @@
+public module noise;
+
+import aperture;
+
+// needed for some noise functions, but doesn't directly exist in slang
+vector<float, N> mod<int N>(vector<float, N> x, float y) {
+    return x - y * floor(x / y);
+}
+
+public struct NoiseResult<int DIM> {
+    public float value;
+    public vector<float, DIM> gradient;
+}
+
+public interface ValueNoiseFunction<int DIM> {
+    public float getValue(vector<float, DIM> uv, float t);
+}
+
+public interface GradientNoiseFunction<int DIM> {
+    public vector<float, DIM> getGradient(vector<float, DIM> uv, float t);
+}
+
+public interface NoiseFunction<int DIM>: ValueNoiseFunction<DIM>, GradientNoiseFunction<DIM> {
+    // optionally accepts a time parameter if the noise has built-in animations
+    public NoiseResult<DIM> get(vector<float, DIM> uv, float t);
+}
+
+public float fbm<uint OCTAVES, int DIM, N: ValueNoiseFunction<DIM>>(
+    N noiseFunction, 
+    vector<float, DIM> uv,
+    matrix<float, DIM, DIM> rotationMatrix, 
+    float lacunarity, 
+    float t
+) {
+    float noise = 1e-6;
+    float amplitude = 0.5;
+
+    for (uint i = 0; i < OCTAVES; i++) {
+        noise += amplitude * noiseFunction.getValue(uv + mod(t, 1000.0), t);
+        uv = mul(rotationMatrix, uv) * lacunarity;
+
+        amplitude *= 0.5;
+    }
+
+    // ensure normalized range
+    return noise * (OCTAVES + 1.0) / OCTAVES;
+}
+
+/*
+    Simplex noise by Stefan Gustavson and Ian McEwan. Code released under the MIT license at https://github.com/stegu/psrdnoise.
+    Slightly modified to remove periodic tiling behavior, as we don't need that.
+*/
+public float simplex(float2 x, float alpha, out float2 gradient) {
+
+	// Transform to simplex space (axis-aligned hexagonal grid)
+	float2 uv = float2(x.x + x.y*0.5, x.y);
+
+	// Determine which simplex we're in, with i0 being the "base"
+	float2 i0 = floor(uv);
+	float2 f0 = fract(uv);
+	// o1 is the offset in simplex space to the second corner
+	float cmp = step(f0.y, f0.x);
+	float2 o1 = float2(cmp, 1.0-cmp);
+
+	// Enumerate the remaining simplex corners
+	float2 i1 = i0 + o1;
+	float2 i2 = i0 + float2(1.0, 1.0);
+
+	// Transform corners back to texture space
+	float2 v0 = float2(i0.x - i0.y * 0.5, i0.y);
+	float2 v1 = float2(v0.x + o1.x - o1.y * 0.5, v0.y + o1.y);
+	float2 v2 = float2(v0.x + 0.5, v0.y + 1.0);
+
+	// Compute vectors from v to each of the simplex corners
+	float2 x0 = x - v0;
+	float2 x1 = x - v1;
+	float2 x2 = x - v2;
+
+	float3 iu, iv;
+	float3 xw, yw;
+
+    // NOTE FROM ambrosia13: stripped out the period stuff, we don't need tiling
+    iu = float3(i0.x, i1.x, i2.x);
+    iv = float3(i0.y, i1.y, i2.y);
+
+	// Compute one pseudo-random hash value for each corner
+	float3 hash = mod(iu, 289.0);
+	hash = mod((hash*51.0 + 2.0)*hash + iv, 289.0);
+	hash = mod((hash*34.0 + 10.0)*hash, 289.0);
+
+	// Pick a pseudo-random angle and add the desired rotation
+	float3 psi = hash * 0.07482 + alpha;
+	float3 gx = cos(psi);
+	float3 gy = sin(psi);
+
+	// Reorganize for dot products below
+	float2 g0 = float2(gx.x,gy.x);
+	float2 g1 = float2(gx.y,gy.y);
+	float2 g2 = float2(gx.z,gy.z);
+
+	// Radial decay with distance from each simplex corner
+	float3 w = 0.8 - float3(dot(x0, x0), dot(x1, x1), dot(x2, x2));
+	w = max(w, 0.0);
+	float3 w2 = w * w;
+	float3 w4 = w2 * w2;
+
+	// The value of the linear ramp from each of the corners
+	float3 gdotx = float3(dot(g0, x0), dot(g1, x1), dot(g2, x2));
+
+	// Multiply by the radial decay and sum up the noise value
+	float n = dot(w4, gdotx);
+
+	// Compute the first order partial derivatives
+	float3 w3 = w2 * w;
+	float3 dw = -8.0 * w3 * gdotx;
+	float2 dn0 = w4.x * g0 + dw.x * x0;
+	float2 dn1 = w4.y * g1 + dw.y * x1;
+	float2 dn2 = w4.z * g2 + dw.z * x2;
+	gradient = 10.9 * (dn0 + dn1 + dn2);
+
+	// Scale the return value to fit nicely into the range [-1,1]
+	return 10.9 * n;
+}
+
+// wraps the above function to support the interface
+public struct SimplexNoise2D: NoiseFunction<2> {
+    public override NoiseResult<2> get(float2 uv, float t) {
+        float2 gradient;
+        float value = simplex(uv, t, gradient);
+
+        return NoiseResult<2>(value, gradient);
+    }
+
+    public override float getValue(float2 uv, float t) {
+        return get(uv, t).value;
+    }
+
+    public override float2 getGradient(float2 uv, float t) {
+        return get(uv, t).gradient;
+    }
+}
+
+public struct TextureNoise2D: ValueNoiseFunction<2> {
+    public Texture2D tex;
+
+    public override float getValue(float2 uv, float t) {
+        return tex.Sample(apt_linearSampler, uv).r;
+    }
+}

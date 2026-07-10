@@ -1,7 +1,6 @@
 package config;
 
 import dev.irisshaders.aperture.api.objects.Screen;
-import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import util.SwapTexture2D;

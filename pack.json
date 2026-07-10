@@ -1,4 +1,5 @@
 {
     "name": "Amaryllis",
-    "api": "0.0.1-beta.4-snapshot+mc26.2-local"
+    "version": "0.1.0",
+    "api": "0.0.1-beta.5-snapshot+mc26.2-local"
 }

@@ -121,7 +121,6 @@ float3 getValFromMultiScattLUT(Texture2D tex, float3 pos, float3 sunDir) {
 
 // Calculates the actual sky-view! It's a lat-long map (or maybe altitude-azimuth is the better term),
 // but the latitude/altitude is non-linear to get more resolution near the horizon.
-static const int numScatteringSteps = 32;
 public float3 raymarchScattering(
     Texture2D transmittanceLut,
     Texture2D multiscatteringLut,
@@ -131,7 +130,7 @@ public float3 raymarchScattering(
     float3 sunColor,
     float mieScatteringAmount,
     float tMax,
-    float numSteps,
+    int numSteps,
     out float3 transmittance,
 ) {
     float cosTheta = dot(rayDir, sunDir);
@@ -144,8 +143,8 @@ public float3 raymarchScattering(
 
     float t = 0.0;
 
-    for (float i = 0.0; i < numSteps; i += 1.0) {
-        float newT = ((i + 0.3) / numSteps) * tMax;
+    for (int i = 0; i < numSteps; i += 1) {
+        float newT = ((float(i) + 0.3) / numSteps) * tMax;
         float dt = newT - t;
         t = newT;
 

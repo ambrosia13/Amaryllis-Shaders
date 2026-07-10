@@ -3,7 +3,7 @@ public module util;
 import aperture;
 
 public float3 getSunVector() {
-    return normalize(mul(ap.camera.viewInv, float4(ap.celestial.sunPosition, 1.0)).xyz);
+    return normalize(ap.celestial.sunPosition);
 }
 
 public float3 getMoonVector() {

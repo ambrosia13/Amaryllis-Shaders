@@ -52,7 +52,7 @@ FragmentOutput downsampleFirst(float2 pos: SV_Position) {
     float2 distance = 2.0 / passSize;
 
     // return FragmentOutput(float4(uv, 0.0, 1.0));
-    return FragmentOutput(frx_sample13(inputTexture, uv, distance, max(0, lod - 1)));
+    return FragmentOutput(max(float4(0.0), frx_sample13(inputTexture, uv, distance, max(0, lod - 1))));
 }
 
 [[shader("pixel")]]

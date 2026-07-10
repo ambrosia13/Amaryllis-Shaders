@@ -27,7 +27,7 @@ namespace Brightnesses {
     public static const float SUN_BRIGHTNESS = 500.0;
     public static const float MOON_BRIGHTNESS = 1.0;
 
-    public static const float AMBIENT_SKYLIGHT_BRIGHTNESS = 2.0;
+    public static const float AMBIENT_SKYLIGHT_BRIGHTNESS = 1.0;
     public static const float BLOCKLIGHT_BRIGHTNESS = 0.1;
     public static const float CAVE_BRIGHTNESS = 0.002;
 
