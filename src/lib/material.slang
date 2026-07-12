@@ -3,7 +3,7 @@ public module material;
 import aperture;
 
 // We store vertex normal and fragment normal in a RGBA16_SNORM texture, with the normals storing the first two
-// channels in world space; the third channel will be reconstructed later with the sign bits stored in meta8.
+// channels in world space; the third channel will be reconstructed with the sign bits stored in meta8.
 // 
 // f0, roughness, sssAmount, and the meta8 bitfield are stored in a RGBA8_UINT texture. The first three components
 // are simply stored in an unsigned normalized fashion, while the meta8 bitfield is stored directly. The meta8 bitfield

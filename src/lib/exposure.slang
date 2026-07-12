@@ -4,7 +4,6 @@
 
 public module exposure;
 
-import lib.color;
 import lib.math;
 
 public uint getBinIndex(float luminance, float minLum, float maxLum, uint bins) {

@@ -9,7 +9,6 @@ public module atmosphere;
 
 import aperture;
 
-import lib.util;
 import lib.math;
 
 // Units are in megameters.

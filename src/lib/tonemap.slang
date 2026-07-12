@@ -144,8 +144,6 @@ namespace justjohn {
     }
 }
 
-
-
 public float3 justjohnTonemap(float3 sRGB) {
     float3 linearSrgb;
 
@@ -214,6 +212,9 @@ public float3 justjohnTonemap(float3 sRGB) {
 /*
     The following four functions are FREX adaptations for common aces fit tone mapping:
     https://github.com/vram-guild/frex/blob/1.19/common/src/main/resources/assets/frex/shaders/lib/color.glsl
+
+    FREX is under the LGPL v3.0 license, and according to the source file, portions were taken from Wisdon shaders by bobcao3, 
+    under the Apache v2.0 license.
 */
 namespace acesFit {
     static const float3x3 ACES_INPUT_MATRIX = float3x3(
@@ -340,51 +341,28 @@ public float3 agxApproxTonemap(float3 color) {
 }
 
 /*
-    An AgX implementation by bWFuanVzYWth on https://www.shadertoy.com/view/XfGfRz. According to the description, this is not a fitted curve,
-    but an algebraic simplification.
+    Taken from https://allenwp.com/blog/2025/05/29/allenwp-tonemapping-curve, released under the MIT License:
+
+    Copyright (c) 2025 Allen Pestaluky
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 */
-namespace agxAlgebraic {
-    float3 agx_curve3(float3 v) {
-        const float threshold = 0.6060606060606061;
-        const float a_up = 69.86278913545539;
-        const float a_down = 59.507875;
-        const float b_up = 13.0 / 4.0;
-        const float b_down = 3.0 / 1.0;
-        const float c_up = -4.0 / 13.0;
-        const float c_down = -1.0 / 3.0;
-
-        float3 mask = step(v, float3(threshold));
-        float3 a = a_up + (a_down - a_up) * mask;
-        float3 b = b_up + (b_down - b_up) * mask;
-        float3 c = c_up + (c_down - c_up) * mask;
-        return 0.5 + (((-2.0 * threshold)) + 2.0 * v) * pow(1.0 + a * pow(abs(v - threshold), b), c);
-    }
-}
-
-public float3 agxAlgebraicTonemap(float3 ci) {
-    const float min_ev = -12.473931188332413;
-    const float max_ev = 4.026068811667588;
-    const float dynamic_range = max_ev - min_ev;
-
-    const float3x3 agx_mat = float3x3(0.8424010709504686, 0.04240107095046854, 0.04240107095046854, 0.07843650156180276, 0.8784365015618028, 0.07843650156180276, 0.0791624274877287, 0.0791624274877287, 0.8791624274877287);
-    const float3x3 agx_mat_inv = float3x3(1.1969986613119143, -0.053001338688085674, -0.053001338688085674, -0.09804562695225345, 1.1519543730477466, -0.09804562695225345, -0.09895303435966087, -0.09895303435966087, 1.151046965640339);
-
-    // Input transform (inset)
-    ci = mul(agx_mat, ci);
-
-    // Apply sigmoid function
-    float3 ct = saturate(log2(ci) * (1.0 / dynamic_range) - (min_ev / dynamic_range));
-    float3 co = agxAlgebraic.agx_curve3(ct);
-
-    co = agxApprox.agxLook(co);
-
-    // Inverse input transform (outset)
-    co = mul(agx_mat_inv, co);
-
-    return /*BT.709 (NOT linear)*/co;
-}
-
-
 // allenwp tonemapping curve; developed for use in the Godot game engine
 // Source and details: https://allenwp.com/blog/2025/05/29/allenwp-tonemapping-curve/
 // Input must be a linear scene value

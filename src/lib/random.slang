@@ -18,9 +18,7 @@ public float2 diskSampling(float i, float n, float phi) {
     R2 sequence for offsetting sample positions for fixed noise providers, like blue noise.    
     Adapted from a blue noise sampling function from jbritain in the shaderLABS discord server #snippets.
 
-    Original comment:
-    R2 sequence from
-    https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+    R2 sequence from https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
 */
 float2 r2SequenceOffset(int i) {
     const float g = 1.32471795724474602596;
