@@ -21,11 +21,7 @@ I try to put comments wherever necessary to document non-obvious behavior, both 
 
 ## licensing & original work
 
-Amaryllis is open source, and you are encouraged to learn from it and reference it for your own projects. However, I ask that you **do not take substantial portions of its original code** without talking with me first. Additionally, I also ask that you **do not publish edits of the shader** on modding platforms (e.g. Modrinth, CurseForge, 9minecraft, etc.) without talking with me first. You may freely publish edits of the shader on version control sites such as GitHub, provided you comply with the license.
-
-I say this not because I want to discourage sharing and collaboration between developers in the shader community, but because I don't wish for any of my creative labor to be taken by someone else and used in a low-effort or AI generated repost shader. I am deeply honored if someone values my work enough to use it as a starting point or an inspiration for their own creativity, but I want it to be in good faith, not just as a cash grab or engagement farm.
-
-**Amaryllis is licensed under the [GPL v3.0 license](https://www.gnu.org/licenses/gpl-3.0.en.html).** In short, according to the license, it means that if you take or modify any of its original work, you must also **open-source** and **license your work under the GPL v3.0**. Please do not confuse it with the LGPL v3.0, which is commonly used across the Minecraft modding community. **If you feel that these guidelines are too restrictive, please reach out to me and I can make an exception.** Chances are I'll say yes.
+Amaryllis is open source, and you are encouraged to learn from it and reference it for your own projects. **It is licensed under the [GPL v3.0 license](https://www.gnu.org/licenses/gpl-3.0.en.html).** In short, according to the license, it means that if you take or modify any of its original work, you must also **open-source** and **license your work under the GPL v3.0**. Please read over the full terms for more detailed information, and please do not confuse it with the LGPL v3.0, which is commonly used across the Minecraft modding community. **If you feel that these guidelines are too restrictive, please reach out to me and I can make an exception.** Chances are I'll say yes.
 
 Every line of code in Amaryllis is written by a human, with care and intention. There is not and there will never be any AI written contribution in its codebase.
 
