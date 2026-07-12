@@ -41,6 +41,30 @@ static const float3x3 LMS_to_sRGB = float3x3(
 
 /*
     "ZCAM Tonemapper" by JustJohn. Taken from https://www.shadertoy.com/view/dlGBDD; code released under the MIT license.
+
+    The original license text is shown below.
+
+    MIT License
+
+    Copyright (c) 2023 John Payne
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 */
 namespace justjohn {
     // eotf_pq parameters
@@ -215,6 +239,8 @@ public float3 justjohnTonemap(float3 sRGB) {
 
     FREX is under the LGPL v3.0 license, and according to the source file, portions were taken from Wisdon shaders by bobcao3, 
     under the Apache v2.0 license.
+
+    Changes were made to adapt the code from GLSL to Slang.
 */
 namespace acesFit {
     static const float3x3 ACES_INPUT_MATRIX = float3x3(
@@ -341,7 +367,9 @@ public float3 agxApproxTonemap(float3 color) {
 }
 
 /*
-    Taken from https://allenwp.com/blog/2025/05/29/allenwp-tonemapping-curve, released under the MIT License:
+    Taken from https://allenwp.com/blog/2025/05/29/allenwp-tonemapping-curve, released under the MIT License.
+
+    The original license text is shown below.
 
     Copyright (c) 2025 Allen Pestaluky
 

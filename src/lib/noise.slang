@@ -71,6 +71,8 @@ public vector<float, DIM> fbmGradient<uint OCTAVES, int DIM, N: GradientNoiseFun
     Simplex noise by Stefan Gustavson and Ian McEwan. Code released under the MIT license at https://github.com/stegu/psrdnoise.
     Slightly modified to remove periodic tiling behavior, as we don't need that.
 
+    The original license text is shown below.
+
     Copyright (c) 2021 Stefan Gustavson and Ian McEwan.
    
     Permission is hereby granted, free of charge, to any person obtaining a
