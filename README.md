@@ -6,6 +6,19 @@
 
 You can join my discord for questions and development updates [here!](https://discord.gg/Zzn4jJapRH)
 
+## project structure
+
+An overview of where everything is placed in Amaryllis:
+- `src/java/Amaryllis.java`: the main entrypoint of the shader pack
+- `src/java/config/*`: files in here configure significant parts of the rendering pipeline, like shadows and the gbuffer
+- `src/java/util/*`: general utility functions or classes
+- `src/lib/*`: general-purpose shader code that is used in various shader programs
+- `src/program/*`: the entrypoints for individual shaders in the rendering pipeline. some programs are placed in subdirectories that better define their purpose and group them up
+- `src/program/object/*`: where world geometry is rendered, i.e. where we process the minecraft vertex input. the same shader program handles solids and translucents, but solid lighting is deferred to a full frame pass
+- `src/program/post/*`: fragment and compute shaders that operate on the scene after it is rendered, to process color, implement effects, or perform any auxiliary lighting functions
+
+I try to put comments wherever necessary to document non-obvious behavior, both for myself and for others.
+
 ## licensing & original work
 
 Amaryllis is open source, and you are encouraged to learn from it and reference it for your own projects. However, I ask that you **do not take substantial portions of its original code** without talking with me first. Additionally, I also ask that you **do not publish edits of the shader** on modding platforms (e.g. Modrinth, CurseForge, 9minecraft, etc.) without talking with me first. You may freely publish edits of the shader on version control sites such as GitHub, provided you comply with the license.
