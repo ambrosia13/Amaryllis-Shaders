@@ -4,7 +4,7 @@ import lib.space;
 import lib.random;
 import lib.exposure;
 import lib.color;
-import lib.agx;
+import lib.tonemap;
 
 extern static const bool showHistogram = true;
 extern static const int histogramBins = 256;
@@ -22,13 +22,8 @@ float4 main(float2 pos: SV_Position) {
 
     float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 3.0).rgb;
 
-    // color = agx(color);
-    // color = agxLook(color);
-    // color = agxEotf(color);
-
-    color = frx_toneMap(color);
-
-    color = toSrgb(color);
+    // tonemap and gamma correct
+    color = acesFitTonemap(color);
 
     // deubg view for histogram
     if (showHistogram) {

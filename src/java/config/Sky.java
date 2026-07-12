@@ -2,21 +2,31 @@ package config;
 
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
+import dev.irisshaders.aperture.api.pipeline.Cubemap;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
+import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 
 public class Sky {
     public static final TextureFormat skyTextureFormat = TextureFormat.RG11B10_UFLOAT;
 
-    public static final int cubemapSize = 512;
     public static final float atmosphereAndCloudsRenderScale = 0.5f;
 
-    // public final Texture3D cubemap;
+    // ensure divisible by 8, for compute dispatch, and a power of two, for generating mips
+    public static final int cubemapSize = 256;
 
-
+    public final Cubemap cubemap;
 
     public Sky(Screen screen, PipelineConfig pipeline) {
-        // cubemap = pipeline.texture3D("cubemap", skyTextureFormat)
-        //     .size(cubemapSize, cubemapSize, 6)
-        //     .create();
+        cubemap = pipeline.cubemap("skyCubemapTexture", skyTextureFormat)
+            .size(cubemapSize, cubemapSize)
+            .create();
+        
+        pipeline.stage(ProgramStage.PRE_RENDER)
+            .compute("skyCubemap", "program/sky/cubemap", "main")
+            .exportInt("cubemapSize", cubemapSize)
+            .dispatch2D(cubemapSize / 8, cubemapSize / 8);
+
+        pipeline.stage(ProgramStage.PRE_RENDER)
+            .generateMips(cubemap);
     }
 }

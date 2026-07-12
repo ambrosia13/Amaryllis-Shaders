@@ -46,12 +46,32 @@ public float fbm<uint OCTAVES, int DIM, N: ValueNoiseFunction<DIM>>(
     return noise * (OCTAVES + 1.0) / OCTAVES;
 }
 
+public vector<float, DIM> fbmGradient<uint OCTAVES, int DIM, N: GradientNoiseFunction<DIM>>(
+    N noiseFunction, 
+    vector<float, DIM> uv,
+    matrix<float, DIM, DIM> rotationMatrix, 
+    float lacunarity, 
+    float t
+) {
+    vector<float, DIM> grad = 1e-6;
+    float amplitude = 0.5;
+
+    for (uint i = 0; i < OCTAVES; i++) {
+        grad += amplitude * noiseFunction.getGradient(uv + mod(t, 1000.0), t);
+        uv = mul(rotationMatrix, uv) * lacunarity;
+
+        amplitude *= 0.5;
+    }
+
+    // ensure normalized range
+    return grad * (OCTAVES + 1.0) / OCTAVES;
+}
+
 /*
     Simplex noise by Stefan Gustavson and Ian McEwan. Code released under the MIT license at https://github.com/stegu/psrdnoise.
     Slightly modified to remove periodic tiling behavior, as we don't need that.
 */
 public float simplex(float2 x, float alpha, out float2 gradient) {
-
 	// Transform to simplex space (axis-aligned hexagonal grid)
 	float2 uv = float2(x.x + x.y*0.5, x.y);
 

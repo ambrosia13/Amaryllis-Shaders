@@ -1,0 +1,417 @@
+module tonemap;
+
+import lib.color;
+
+// Extracted from JustJohn's tone mapper, see below.
+static const float3x3 XYZ_to_sRGB = float3x3(
+     3.2404542, -1.5371385, -0.4985314,
+	-0.9692660,  1.8760108,  0.0415560,
+	 0.0556434, -0.2040259,  1.0572252
+);
+
+static const float3x3 sRGB_to_XYZ = float3x3(
+    0.4124564, 0.3575761, 0.1804375,
+	0.2126729, 0.7151522, 0.0721750,
+	0.0193339, 0.1191920, 0.9503041
+);
+
+static const float3x3 XYZ_to_LMS = float3x3(
+        0.4002, 0.7076, -0.0808,
+       -0.2263, 1.1653,  0.0457,
+        0.0,    0.0,     0.9182
+);
+
+static const float3x3 LMS_to_XYZ = float3x3(
+    1.86006661e+00, -1.12948008e+00,  2.19898303e-01,
+    3.61222925e-01,  6.38804306e-01, -7.12750153e-06,
+    0.00000000e+00,  0.00000000e+00,  1.08908734e+00
+);
+
+static const float3x3 sRGB_to_LMS = float3x3(
+    0.27268655, 0.65552284, 0.07179061,
+    0.09949164, 0.77724267, 0.12326569,
+    0.02402541, 0.09303149, 0.8829431
+);
+
+static const float3x3 LMS_to_sRGB = float3x3(
+    5.28471971, -4.48054731,  0.1958275,
+    -0.66477748,  1.87208299, -0.20730536,
+    -0.07375599, -0.07533408,  1.14909005
+);
+
+/*
+    "ZCAM Tonemapper" by JustJohn. Taken from https://www.shadertoy.com/view/dlGBDD; code released under the MIT license.
+*/
+namespace justjohn {
+    // eotf_pq parameters
+    static const float Lp = 10000.0;
+    static const float m1 = 2610.0 / 16384.0;
+    static const float m2 = 1.7 * 2523.0 / 32.0;
+    static const float c1 = 107.0 / 128.0;
+    static const float c2 = 2413.0 / 128.0;
+    static const float c3 = 2392.0 / 128.0;
+
+    float3 eotf_pq(float3 x) {
+        x = sign(x) * pow(abs(x), float3(1.0 / m2));
+        x = sign(x) * pow((abs(x) - c1) / (c2 - c3 * abs(x)), float3(1.0 / m1)) * Lp;
+        return x;
+    }
+
+    float3 eotf_pq_inverse(float3 x) {
+        x /= Lp;
+        x = sign(x) * pow(abs(x), float3(m1));
+        x = sign(x) * pow((c1 + c2 * abs(x)) / (1.0 + c3 * abs(x)), float3(m2));
+        return x;
+    }
+
+    // XYZ <-> ICh parameters
+    static const float W = 140.0;
+    static const float b = 1.15;
+    static const float g = 0.66;
+
+    float3 XYZ_to_ICh(float3 XYZ) {
+        XYZ *= W;
+        XYZ.xy = float2(b, g) * XYZ.xy - (float2(b, g) - 1.0) * XYZ.zx;
+        
+        const float3x3 XYZ_to_LMS = (float3x3(
+            0.41479,   0.579999, 0.014648,
+            -0.20151,   1.12065,  0.0531008,
+            -0.0166008, 0.2648,   0.66848));
+        
+        float3 LMS = mul(XYZ_to_LMS, XYZ);
+        LMS = eotf_pq_inverse(LMS);
+        
+        const float3x3 LMS_to_Iab = (float3x3(
+            0.0,       1.0,      0.0,
+            3.524,    -4.06671,  0.542708,
+            0.199076,  1.0968,  -1.29588));
+        
+        float3 Iab = mul(LMS_to_Iab, LMS);
+        
+        float I = eotf_pq(float3(Iab.x)).x / W;
+        float C = length(Iab.yz);
+        float h = atan2(Iab.z, Iab.y);
+        return float3(I, C, h);
+    }
+
+    float3 ICh_to_XYZ(float3 ICh) {
+        float3 Iab;
+        Iab.x = eotf_pq_inverse(float3(ICh.x * W)).x;
+        Iab.y = ICh.y * cos(ICh.z);
+        Iab.z = ICh.y * sin(ICh.z);
+        
+        const float3x3 Iab_to_LMS = (float3x3(
+            1.0, 0.2772,  0.1161,
+            1.0, 0.0,     0.0,
+            1.0, 0.0426, -0.7538));
+        
+        float3 LMS = mul(Iab_to_LMS, Iab);
+        LMS = eotf_pq(LMS);
+        
+        const float3x3 LMS_to_XYZ = (float3x3(
+            1.92423, -1.00479,  0.03765,
+            0.35032,  0.72648, -0.06538,
+            -0.09098, -0.31273,  1.52277));
+        
+        float3 XYZ = mul(LMS_to_XYZ, LMS);
+        XYZ.x = (XYZ.x + (b - 1.0) * XYZ.z) / b;
+        XYZ.y = (XYZ.y + (g - 1.0) * XYZ.x) / g;
+        return XYZ / W;
+    }
+
+    float sRGB_to_Y(float3 sRGB) {
+        return mul(sRGB_to_XYZ, sRGB).y;
+    }
+
+    bool in_sRGB_gamut(float3 ICh) {
+        float3 sRGB = mul(XYZ_to_sRGB, ICh_to_XYZ(ICh));
+        return all(sRGB >= float3(0.0)) && all(sRGB <= float3(1.0));
+    }
+
+    float3 tonescale(float3 x, float a, float b) {
+        x = pow(x, float3(a));
+        x = x / (x + exp(-b));
+        x *= x;
+        return x;
+    }
+
+    float f(float t, float3 p, float3 rgb, float Y) {
+        return sRGB_to_Y(rgb + pow(float3(t), p) * (1.0 - rgb)) - Y;
+    }
+
+    float dfdt(float t, float3 p, float3 rgb) {
+        return sRGB_to_Y(p * pow(float3(t), p - 1.0) * (1.0 - rgb));
+    }
+}
+
+
+
+public float3 justjohnTonemap(float3 sRGB) {
+    float3 linearSrgb;
+
+    const uint mode = 3;
+
+    if (mode == 0) {
+        sRGB *= 3.0;
+        float3 chroma = justjohn.tonescale(sRGB, 0.75f, -0.23);
+        chroma /= mul(sRGB_to_XYZ, chroma).y;
+        
+        float Y = justjohn.tonescale(mul(sRGB_to_XYZ, sRGB).yyy, 0.75, 0.0).y;
+        linearSrgb = clamp(chroma * Y, 0.0, 1.0);
+    } else if (mode == 1) {
+        float Y = justjohn.tonescale(mul(sRGB_to_XYZ, sRGB).yyy, 0.75, 0.0).y;
+        
+        float achromatic = max(sRGB.r, max(sRGB.g, sRGB.b));
+        sRGB *= justjohn.tonescale(float3(achromatic), 0.75, 0.0).x / achromatic;
+        
+        if (Y > justjohn.sRGB_to_Y(sRGB)) {
+            float3 p = float3(1.4, 1.0, 1.1);
+            float t = 1.0;
+            for (int i = 0; i < 4; i++)
+                t = t - justjohn.f(t, p, sRGB, Y) / justjohn.dfdt(t, p, sRGB);
+            
+            sRGB = lerp(sRGB, float3(1.0), pow(float3(t), p));
+        } else {
+            float t = (Y - justjohn.sRGB_to_Y(sRGB)) / (1.0 - justjohn.sRGB_to_Y(sRGB));
+            sRGB = lerp(sRGB, float3(1.0), t);
+        }
+        
+        linearSrgb = sRGB;
+    } else if (mode == 2) {
+        float3 LMS = mul(XYZ_to_LMS, mul(sRGB_to_XYZ, sRGB));
+        
+        LMS = justjohn.tonescale(LMS, 0.75, 0.0);
+        
+        sRGB = mul(XYZ_to_sRGB, mul(LMS_to_XYZ, LMS));
+        linearSrgb = sRGB;
+    } else {
+        float3 ICh = justjohn.XYZ_to_ICh(mul(sRGB_to_XYZ, sRGB));
+        
+        const float s0 = 0.71;
+        const float s1 = 1.04;
+        const float p = 1.40;
+        const float t0 = 0.01;
+        float n = s1 * pow(ICh.x / (ICh.x + s0), p);
+        ICh.x = clamp(n * n / (n + t0), 0.0, 1.0);
+        
+        if (!justjohn.in_sRGB_gamut(ICh))
+        {
+            float C = ICh.y;
+            ICh.y -= 0.5 * C;
+            
+            for (float i = 0.25; i >= 1.0 / 256.0; i *= 0.5)
+            {
+                ICh.y += (justjohn.in_sRGB_gamut(ICh) ? i : -i) * C;
+            }
+        }
+        
+        linearSrgb = mul(XYZ_to_sRGB, justjohn.ICh_to_XYZ(ICh));
+    }
+
+    return gammaCorrectSrgb(linearSrgb);
+}
+
+/*
+    The following four functions are FREX adaptations for common aces fit tone mapping:
+    https://github.com/vram-guild/frex/blob/1.19/common/src/main/resources/assets/frex/shaders/lib/color.glsl
+*/
+namespace acesFit {
+    static const float3x3 ACES_INPUT_MATRIX = float3x3(
+        float3(0.59719, 0.07600, 0.02840),
+        float3(0.35458, 0.90834, 0.13383),
+        float3(0.04823, 0.01566, 0.83777)
+    );
+
+    // ODT_SAT => XYZ => D60_2_D65 => sRGB
+    static const float3x3 ACES_OUTPUT_MATRIX = float3x3(
+        float3(1.60475, -0.10208, -0.00327),
+        float3(-0.53108, 1.10813, -0.07276),
+        float3(-0.07367, -0.00605, 1.07602)
+    );
+
+    float3 rrtAndOdtfFit(float3 v) {
+        float3 a = v * (v + 0.0245786) - 0.000090537;
+        float3 b = v * (0.983729 * v + 0.4329510) + 0.238081;
+
+        return a / b;
+    }
+}
+
+public float3 acesFitTonemap(float3 color) {
+    color = mul(color, acesFit.ACES_INPUT_MATRIX);
+    color = acesFit.rrtAndOdtfFit(color);
+
+    float3 linear = mul(color, acesFit.ACES_OUTPUT_MATRIX);
+    return gammaCorrectSrgb(linear);
+}
+
+/*
+    AgX approximations from https://www.shadertoy.com/view/cd3XWr.
+*/
+namespace agxApprox {
+    float3 agxDefaultContrastApprox(float3 x) {
+        float3 x2 = x * x;
+        float3 x4 = x2 * x2;
+        
+        return + 15.5     * x4 * x2
+                - 40.14    * x4 * x
+                + 31.96    * x4
+                - 6.868    * x2 * x
+                + 0.4298   * x2
+                + 0.1191   * x
+                - 0.00232;
+    }
+
+    float3 agx(float3 val) {
+        const float3x3 agx_mat = float3x3(
+            0.842479062253094, 0.0423282422610123, 0.0423756549057051,
+            0.0784335999999992,  0.878468636469772,  0.0784336,
+            0.0792237451477643, 0.0791661274605434, 0.879142973793104
+        );
+            
+        const float min_ev = -12.47393f;
+        const float max_ev = 4.026069f;
+
+        // Input transform
+        val = mul(agx_mat, val);
+        
+        // Log2 space encoding
+        val = clamp(log2(val), min_ev, max_ev);
+        val = (val - min_ev) / (max_ev - min_ev);
+        
+        // Apply sigmoid function approximation
+        val = agxDefaultContrastApprox(val);
+
+        return val;
+    }
+
+    float3 agxEotf(float3 val) {
+        const float3x3 agx_mat_inv = float3x3(
+            1.19687900512017, -0.0528968517574562, -0.0529716355144438,
+            -0.0980208811401368, 1.15190312990417, -0.0980434501171241,
+            -0.0990297440797205, -0.0989611768448433, 1.15107367264116
+        );
+            
+        // Undo input transform
+        val = mul(agx_mat_inv, val);
+        
+        // sRGB IEC 61966-2-1 2.2 Exponent Reference EOTF Display
+        //val = pow(val, float3(2.2));
+
+        return val;
+    }
+
+    float3 agxLook(float3 val) {  
+        // Default
+        float3 offset = float3(0.0);
+        float3 slope = float3(1.0);
+        float3 power = float3(1.0);
+        float sat = 1.0;
+        
+        // #define AGX_LOOK 2
+        // #if AGX_LOOK == 1
+        //   // Golden
+        //   slope = float3(1.0, 0.9, 0.5);
+        //   power = float3(0.8);
+        //   sat = 0.8;
+        // #elif AGX_LOOK == 2
+        //   // Punchy
+        //   slope = float3(1.0);
+        //   power = float3(1.35, 1.35, 1.35);
+        //   sat = 1.4;
+        // #endif
+        
+        // ASC CDL
+        val = pow(val * slope + offset, power);
+        
+        const float3 lw = float3(0.2126, 0.7152, 0.0722);
+        float luma = dot(val, lw);
+        
+        return luma + sat * (val - luma);
+    }
+}
+
+public float3 agxApproxTonemap(float3 color) {
+    color = agxApprox.agx(color);
+    color = agxApprox.agxLook(color);
+    color = agxApprox.agxEotf(color);
+
+    return color;
+}
+
+/*
+    An AgX implementation by bWFuanVzYWth on https://www.shadertoy.com/view/XfGfRz. According to the description, this is not a fitted curve,
+    but an algebraic simplification.
+*/
+namespace agxAlgebraic {
+    float3 agx_curve3(float3 v) {
+        const float threshold = 0.6060606060606061;
+        const float a_up = 69.86278913545539;
+        const float a_down = 59.507875;
+        const float b_up = 13.0 / 4.0;
+        const float b_down = 3.0 / 1.0;
+        const float c_up = -4.0 / 13.0;
+        const float c_down = -1.0 / 3.0;
+
+        float3 mask = step(v, float3(threshold));
+        float3 a = a_up + (a_down - a_up) * mask;
+        float3 b = b_up + (b_down - b_up) * mask;
+        float3 c = c_up + (c_down - c_up) * mask;
+        return 0.5 + (((-2.0 * threshold)) + 2.0 * v) * pow(1.0 + a * pow(abs(v - threshold), b), c);
+    }
+}
+
+public float3 agxAlgebraicTonemap(float3 ci) {
+    const float min_ev = -12.473931188332413;
+    const float max_ev = 4.026068811667588;
+    const float dynamic_range = max_ev - min_ev;
+
+    const float3x3 agx_mat = float3x3(0.8424010709504686, 0.04240107095046854, 0.04240107095046854, 0.07843650156180276, 0.8784365015618028, 0.07843650156180276, 0.0791624274877287, 0.0791624274877287, 0.8791624274877287);
+    const float3x3 agx_mat_inv = float3x3(1.1969986613119143, -0.053001338688085674, -0.053001338688085674, -0.09804562695225345, 1.1519543730477466, -0.09804562695225345, -0.09895303435966087, -0.09895303435966087, 1.151046965640339);
+
+    // Input transform (inset)
+    ci = mul(agx_mat, ci);
+
+    // Apply sigmoid function
+    float3 ct = saturate(log2(ci) * (1.0 / dynamic_range) - (min_ev / dynamic_range));
+    float3 co = agxAlgebraic.agx_curve3(ct);
+
+    co = agxApprox.agxLook(co);
+
+    // Inverse input transform (outset)
+    co = mul(agx_mat_inv, co);
+
+    return /*BT.709 (NOT linear)*/co;
+}
+
+
+// allenwp tonemapping curve; developed for use in the Godot game engine
+// Source and details: https://allenwp.com/blog/2025/05/29/allenwp-tonemapping-curve/
+// Input must be a linear scene value
+float3 allenwpTonemap(
+    float3 x,
+    float output_max_value,
+    float awp_contrast,
+    float awp_toe_a,
+    float awp_slope,
+    float awp_w,
+    float awp_shoulder_max
+) {
+	// This constant must match the CPU-side code that calculates the parameters.
+	// 18% "middle grey" is perceptually 50% of the lightness of reference white.
+	const float awp_crossover_point = 0.1841865;
+
+	x = max(x, 0.0); // Negative input causes undefined behaviour from pow function!
+
+	// Reinhard-like shoulder:
+	float3 s = x - awp_crossover_point;
+	float3 slope_s = awp_slope * s;
+	s = slope_s * (1.0 + s / awp_w) / (1.0 + (slope_s / awp_shoulder_max));
+	s += awp_crossover_point;
+
+	// Sigmoid power function toe:
+	float3 t = pow(x, float3(awp_contrast));
+	t = t / (t + awp_toe_a);
+
+	return select(x < float3(awp_crossover_point), t, s);
+}

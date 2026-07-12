@@ -68,12 +68,16 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         if (let texture = objectData.albedo()) { // Since `albedo()` returns an Optional<Sampleable>, this is one of a few ways to get the true type. You can also do albedo().hasValue and albedo().value, of course.
             color *= texture.sampleTexture(input.uv); // Some objects simply don't have a texture, such as clouds.
         }
+        
+        // if (input.blockId == WATER_ID) {
+        //     color.rgb = float3(0.0, 0.2, 0.275) * input.color.rgb;
+        // }
 
         // This is equivalent to `if (objectIsCutout && alpha < 0.1) discard;`. It will determine if the object needs it.
         ap.discardCutout(color);
 
-        // gamma correct
-        color.rgb = toLinear(color.rgb);
+        // convert to linear srgb
+        color.rgb = linearizeSrgb(color.rgb);
 
         if (iris_isTranslucent) {
             int2 coord = int2(objectData.screenPos.xy);

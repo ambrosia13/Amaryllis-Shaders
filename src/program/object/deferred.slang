@@ -15,6 +15,7 @@ Texture2D<float4> solidMatLightTexture;
 Texture2D transmittanceLookupTexture;
 Texture2D multiscatteringLookupTexture;
 Texture2D skyViewTexture;
+TextureCube skyCubemapTexture;
 
 struct FragmentOutput {
     float4 color;
@@ -22,6 +23,7 @@ struct FragmentOutput {
 
 [[shader("pixel")]]
 FragmentOutput main(float2 pos: SV_Position) {
+    float2 uv = pos / ap.game.renderSize;
     int2 coord = int2(pos);
 
     float3 color = solidAlbedoTexture[coord].rgb;
@@ -53,6 +55,8 @@ FragmentOutput main(float2 pos: SV_Position) {
         );
     } else {
         // sky!
+        // color = skyCubemapTexture.Sample(apt_linearSampler, viewDir).rgb;
+
         color = getValFromSkyLUT(skyViewTexture, viewDir, getSunVector());
         drawSunOnAtmosphere(color, transmittanceLookupTexture, viewDir);
     }

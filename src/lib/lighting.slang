@@ -1,13 +1,14 @@
 public module lighting;
 
 import aperture;
+
 import lib.material;
 import lib.shadows;
 import lib.util;
-import lib.sky;
 import lib.atmosphere;
 import lib.palette;
 import lib.random;
+import lib.math;
 
 extern static const float skyLutLightSampleLod = 0.0;
 
@@ -81,4 +82,17 @@ public float3 lighting(
     lighting += directLightColor * shadowFactor;
 
     return lighting;
+}
+
+public float specularDistribution(float NdotH, float roughness) {
+    float a = NdotH * roughness;
+    float k = roughness / (1.0 - pow2(NdotH) + pow2(a));
+    return k * k * (1.0 / PI);
+}
+
+// Schlick fresnel approximation
+public float3 getReflectance(float3 f0, float NdotV, float roughness) {
+    float3 r = f0 + (1.0 - f0) * pow(1.0 - NdotV, 5.0);
+
+    return lerp(r, min(r, float3(0.1)), roughness);
 }

@@ -38,3 +38,14 @@ public float3 viewSpaceToScreenSpace(float3 viewSpacePos) {
 public float linearizeDepth(float depth) {
     return ap.camera.near * ap.camera.far / (ap.camera.far - (depth * (ap.camera.far - ap.camera.near)));
 }
+
+// Materializes a TBN matrix out of thin air.
+public float3x3 inventTbnMatrix(float3 normal) {
+    const float3 reference = normalize(float3(1.0, 0.5, 0.25));
+
+    float3 tangent = cross(normal, reference);
+    float3 bitangent = cross(normal, tangent);
+
+    return float3x3(tangent, bitangent, normal);
+}
+

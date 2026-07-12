@@ -3,6 +3,7 @@ import config.Gbuffer;
 import config.NoiseTextures;
 import config.PostPasses;
 import config.Shadow;
+import config.Sky;
 import dev.irisshaders.aperture.api.*;
 import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
@@ -23,6 +24,7 @@ public class Amaryllis implements ShaderPack {
 
         NoiseTextures.load(pipeline);
 
+        var sky = new Sky(screen, pipeline);
         Shadow.setup(pipeline);
         var atmosphere = new Atmosphere(pipeline);
         var gbuffer = new Gbuffer(pipeline, mainTextures);

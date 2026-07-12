@@ -8,13 +8,20 @@ import lib.sky;
 import lib.noise;
 import lib.clouds;
 import lib.random;
+import lib.material;
+import lib.lighting;
+import lib.face;
 
 // for fog
 Texture2D transmittanceLookupTexture;
 Texture2D multiscatteringLookupTexture;
 Texture2D skyViewTexture;
 
-// Texture2D cellular2DTexture;
+TextureCube skyCubemapTexture;
+
+Texture2D<float4> solidMatNormalsTexture;
+Texture2D<uint4> solidMatPbrTexture;
+Texture2D<float4> solidMatLightTexture;
 
 Texture2D inputTexture;
 
@@ -30,15 +37,75 @@ FragmentOutput main(float2 pos: SV_Position) {
     float4 color = inputTexture.Sample(apt_linearSampler, uv);
 
     float depth = ap.depth[coord];
-    depth = max(depth, ap.handDepth[coord]);
+    float handDepth = ap.handDepth[coord];
+    float opaqueDepth = ap.opaqueDepth[coord];
 
+    float4 normalSample = solidMatNormalsTexture[coord];
+    uint4 pbrSample = solidMatPbrTexture[coord];
+    float4 lightSample = solidMatLightTexture[coord];
+
+    depth = max(depth, handDepth);
     float3 screenSpacePos = float3(uv, depth);    
 
     float3 sceneSpacePos = screenSpaceToSceneSpace(screenSpacePos);
     float distance = length(sceneSpacePos);
     float3 viewDir = sceneSpacePos / distance;
 
+    Material mat = Material.unpack(normalSample, pbrSample, lightSample);
+
     if (depth != 0.0) {
+        // water effects
+        // if (mat.isWater()) {
+        //     // first: water fog and absorption
+
+        //     // now fix up normals and pbr parameters
+        //     mat.roughness = 0.0;
+        //     mat.f0 = 0.04;
+
+        //     float2 uv = getFaceUv(sceneSpacePos + ap.camera.position, mat.vertexNormal);
+
+        //     float3x3 tbn = inventTbnMatrix(mat.vertexNormal);
+
+        //     // float2 gradient = fbmGradient<8>(
+        //     //         N noiseFunction, 
+        //     //         vector<float, DIM> uv,
+        //     //         matrix<float, DIM, DIM> rotationMatrix, 
+        //     //         float lacunarity, 
+        //     //         float t
+        //     // )
+
+        //     float2 gradient = 0.05 * fbmGradient<1>(
+        //         SimplexNoise2D(),
+        //         uv,
+        //         rotationMatrix(radians(30)),
+        //         2.0,
+        //         ap.timing.timeElapsed
+        //     );
+
+        //     mat.fragNormal = normalize(
+        //         mul(transpose(tbn), normalize(
+        //             cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
+        //         ))
+        //     );
+
+        //     // color.rg = fract(uv);
+        // }
+
+        // apply reflections
+        if (mat.roughness < 1.0 && mat.f0 > 0.0) {
+            float NdotV = dot(mat.fragNormal, -viewDir);
+
+            float3 reflectance = getReflectance(mat.f0, NdotV, mat.roughness);
+
+            float3 reflectedViewDir = reflect(viewDir, mat.fragNormal);
+            float3 reflectedSkyColor = skyCubemapTexture.Sample(apt_linearSampler, reflectedViewDir).rgb;
+            drawSunOnAtmosphere(reflectedSkyColor, transmittanceLookupTexture, reflectedViewDir);
+
+
+            color.rgb = lerp(color.rgb, reflectedSkyColor, reflectance);
+        }
+
+        // apply atmospheric aerial perspective fog to the scene
         float3 fogTransmittance;
         float3 fogScattering = raymarchAtmosphere(
             transmittanceLookupTexture,

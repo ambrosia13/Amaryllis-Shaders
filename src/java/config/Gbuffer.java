@@ -101,9 +101,9 @@ public class Gbuffer {
                 // since the object shader doesn't read from a texture, but just blends into the existing texture,
                 // don't use the flipped one for writing
                 .writes("color", mainTextures.overwrite())
-                .writes("matNormals", translucentAux.matNormalsTexture, replaceBlendMode)
-                .writes("matPbr", translucentAux.matPbrTexture, replaceBlendMode)
-                .writes("matLight", translucentAux.matLightTexture, replaceBlendMode);
+                .writes("matNormals", solidAux.matNormalsTexture, replaceBlendMode)
+                .writes("matPbr", solidAux.matPbrTexture, replaceBlendMode)
+                .writes("matLight", solidAux.matLightTexture, replaceBlendMode);
 
             BlockIdMapping.exportAllIds(builder);
         }
