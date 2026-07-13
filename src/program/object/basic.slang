@@ -69,9 +69,10 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
             color *= texture.sampleTexture(input.uv); // Some objects simply don't have a texture, such as clouds.
         }
         
-        // if (input.blockId == WATER_ID) {
-        //     color.rgb = float3(0.0, 0.2, 0.275) * input.color.rgb;
-        // }
+        if (input.blockId == WATER_ID) {
+            color.rgb = input.color.rgb;
+            color.a = 0.01;
+        }
 
         // This is equivalent to `if (objectIsCutout && alpha < 0.1) discard;`. It will determine if the object needs it.
         ap.discardCutout(color);

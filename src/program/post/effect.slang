@@ -11,6 +11,7 @@ import lib.random;
 import lib.material;
 import lib.lighting;
 import lib.face;
+import lib.color;
 
 // for fog
 Texture2D transmittanceLookupTexture;
@@ -45,51 +46,61 @@ FragmentOutput main(float2 pos: SV_Position) {
     float4 lightSample = solidMatLightTexture[coord];
 
     depth = max(depth, handDepth);
-    float3 screenSpacePos = float3(uv, depth);    
+
+    float3 screenSpacePos = float3(uv, depth);
+    float3 screenSpacePosBack = float3(uv, opaqueDepth);
 
     float3 sceneSpacePos = screenSpaceToSceneSpace(screenSpacePos);
+    float3 sceneSpacePosBack = screenSpaceToSceneSpace(screenSpacePosBack);
+
     float distance = length(sceneSpacePos);
+    float distanceBack = length(sceneSpacePosBack);
     float3 viewDir = sceneSpacePos / distance;
 
     Material mat = Material.unpack(normalSample, pbrSample, lightSample);
 
     if (depth != 0.0) {
         // water effects
-        // if (mat.isWater()) {
-        //     // first: water fog and absorption
+        if (mat.isWater()) {
+            // first: water fog and absorption
+            float waterThickness = distanceBack - distance;
+            float transmittance = exp(-waterThickness * 0.1);
+            float3 waterScatteringColor = 0.05 * normalizeLuminance(linearizeSrgb(float3(0.1, 0.7, 0.8))) * mat.skyLight;
 
-        //     // now fix up normals and pbr parameters
-        //     mat.roughness = 0.0;
-        //     mat.f0 = 0.04;
+            color.rgb = lerp(waterScatteringColor, color.rgb, transmittance);
 
-        //     float2 uv = getFaceUv(sceneSpacePos + ap.camera.position, mat.vertexNormal);
+            // now fix up normals and pbr parameters
+            mat.roughness = 0.0;
+            mat.f0 = 0.04;
 
-        //     float3x3 tbn = inventTbnMatrix(mat.vertexNormal);
+            float2 uv = getFaceUv(sceneSpacePos + ap.camera.position, mat.vertexNormal);
 
-        //     // float2 gradient = fbmGradient<8>(
-        //     //         N noiseFunction, 
-        //     //         vector<float, DIM> uv,
-        //     //         matrix<float, DIM, DIM> rotationMatrix, 
-        //     //         float lacunarity, 
-        //     //         float t
-        //     // )
+            float3x3 tbn = inventTbnMatrix(mat.vertexNormal);
 
-        //     float2 gradient = 0.05 * fbmGradient<1>(
-        //         SimplexNoise2D(),
-        //         uv,
-        //         rotationMatrix(radians(30)),
-        //         2.0,
-        //         ap.timing.timeElapsed
-        //     );
+            // float2 gradient = fbmGradient<8>(
+            //         N noiseFunction, 
+            //         vector<float, DIM> uv,
+            //         matrix<float, DIM, DIM> rotationMatrix, 
+            //         float lacunarity, 
+            //         float t
+            // )
 
-        //     mat.fragNormal = normalize(
-        //         mul(transpose(tbn), normalize(
-        //             cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
-        //         ))
-        //     );
+            float2 gradient = 0.01 * fbmGradient<1>(
+                SimplexNoise2D(),
+                uv,
+                rotationMatrix(radians(30)),
+                2.0,
+                ap.timing.timeElapsed
+            );
 
-        //     // color.rg = fract(uv);
-        // }
+            // mat.fragNormal = normalize(
+            //     mul(transpose(tbn), normalize(
+            //         cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
+            //     ))
+            // );
+
+            // color.rg = fract(uv);
+        }
 
         // apply reflections
         if (mat.roughness < 1.0 && mat.f0 > 0.0) {
