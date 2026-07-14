@@ -5,10 +5,11 @@ import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 import util.SwapTexture2D;
+import util.Util;
 
 public class PostPasses {
     public static final int hiDepthMaxLevels = 5; // 0, 2, 4, 6, 8
-    public static final int hiLevelStep = 2; // see hi-z compute shader for details
+    public static final int hiLevelStep = 1; // see hi-z compute shader for details
 
     public static void setup(Screen screen, PipelineConfig pipeline, Atmosphere atmosphere, Gbuffer gbuffer, SwapTexture2D mainTextures) {
         int hiDepthLevels = hiZPass(screen, pipeline);
@@ -43,9 +44,11 @@ public class PostPasses {
             .usesMipmaps()
             .create();
         
+        var wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, 0);
+
         pipeline.stage(ProgramStage.POST_RENDER)
             .compute("copyFirstDepth", "program/hiZ", "copyFirstDepth")
-            .dispatch2D(Math.ceilDiv(screen.renderWidth(), 8), Math.ceilDiv(screen.renderHeight(), 8));
+            .dispatch2D(wgc.x, wgc.y);
 
         int minDimension = Math.min(screen.renderWidth(), screen.renderHeight());
         int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0));
@@ -57,11 +60,13 @@ public class PostPasses {
 
             if (level > maxDownsampleLevel) break;
 
+            wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, level);
+
             pipeline.stage(ProgramStage.POST_RENDER)
                 .compute("depthDownsample" + level, "program/hiZ", "depthDownsample")
                 .exportInt("srcLod", level - hiLevelStep)
                 .exportInt("dstLod", level)
-                .dispatch2D(Math.ceilDiv(screen.renderWidth() >> level, 8), Math.ceilDiv(screen.renderHeight() >> level, 8));
+                .dispatch2D(wgc.x, wgc.y);
         }
 
         return i;

@@ -6,7 +6,7 @@ import lib.exposure;
 import lib.color;
 import lib.tonemap;
 
-extern static const bool showHistogram = true;
+extern static const bool showHistogram = false;
 extern static const int histogramBins = 256;
 extern static const float minLuminance = 0.000001;
 extern static const float maxLuminance = 2.0;
@@ -14,13 +14,15 @@ StructuredBuffer<uint> histogram;
 StructuredBuffer<float> meteredLuminance;
 
 Texture2D outputTexture;
+Texture2D<float> hiDepthTexture;
 
 [[shader("pixel")]]
 float4 main(float2 pos: SV_Position) {
     float2 uv = pos / ap.game.renderSize;
     uint2 coord = uint2(pos);
 
-    float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 3.0).rgb;
+    // float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 3.0).rgb;
+    float3 color = float3(screenSpaceToViewSpace(float3(uv, hiDepthTexture.SampleLevel(apt_nearestSampler, uv, 4.0))).z / 50.0);
 
     // tonemap and gamma correct
     color = acesFitTonemap(color);
