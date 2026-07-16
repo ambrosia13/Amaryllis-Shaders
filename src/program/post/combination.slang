@@ -21,11 +21,32 @@ float4 main(float2 pos: SV_Position) {
     float2 uv = pos / ap.game.renderSize;
     uint2 coord = uint2(pos);
 
-    // float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 3.0).rgb;
-    float3 color = float3(screenSpaceToViewSpace(float3(uv, hiDepthTexture.SampleLevel(apt_nearestSampler, uv, 4.0))).z / 50.0);
+    float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 3.0).rgb;
+    // float3 color = float3(screenSpaceToViewSpace(float3(uv, hiDepthTexture.SampleLevel(apt_nearestSampler, uv, 4.0))).z / 50.0);
 
-    // tonemap and gamma correct
-    color = acesFitTonemap(color);
+    // // contrast
+    // float fulcrum = 0.18;
+    // float contrast = 1.0;
+
+    // float luminance = luminance(color);
+
+    // // contrast = 1.0 + floor(uv.x * 10.0) / 10.0;
+    // // color.r += 0.1 * float(abs(luminance - 0.18) < 0.01);
+
+    // luminance = pow(luminance / fulcrum, contrast) * fulcrum;
+
+    // color = normalizeLuminance(color) * luminance;
+
+    // // color = log(color);
+	// // color = (color - 0.5) * contrast + 0.5;
+    // // color = exp(color);
+
+    // // tonemap and gamma correct CameraResponseCurve(floor(uv.x * 47) * 3.0)
+    // color = mul(tanh(mul(color, acesFit.ACES_INPUT_MATRIX)), acesFit.ACES_OUTPUT_MATRIX);
+    color = acesFitTonemap(color * 3.0);
+    // color = agxApproxTonemap(color * 1.);
+    // color = applyCameraResponseCurve(color * 0.4, CameraResponseCurve.Gold_200);
+    color = gammaCorrectSrgb(color);
 
     // deubg view for histogram
     if (showHistogram) {

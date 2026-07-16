@@ -4,6 +4,8 @@ import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
+import dev.irisshaders.aperture.api.pipeline.RawProvider;
+import dev.irisshaders.aperture.api.pipeline.TextureType;
 import util.SwapTexture2D;
 import util.Util;
 
@@ -30,6 +32,13 @@ public class PostPasses {
         var bloom = new Bloom(screen, pipeline, mainTextures.read(), mainTextures.write());
 
         mainTextures.flip();
+
+        pipeline.loadRawTexture(
+            "dorfCurves", 
+            TextureType.of2D(1024, 141), 
+            TextureFormat.R32_SFLOAT, 
+            RawProvider.fromFile("textures/dorfCurves.dat")
+        );
 
         // combination pass has no explicit outputs and reads from the ping pong
         pipeline.combinationPass("program/post/combination")

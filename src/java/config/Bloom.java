@@ -34,7 +34,7 @@ public class Bloom {
 
         // subtract 1 here because the first pass was the blit from the input texture to the base lod of the downsample texture
         int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0));
-        maxDownsampleLevel -= 1; // avoid going the whole way all the way to 1x1, to keep some localized effects
+        maxDownsampleLevel -= 0; // avoid going the whole way all the way to 1x1, to keep some localized effects
         // maxDownsampleLevel = Math.min(maxDownsampleLevel, 10); // cap it out at 10, which works for 1080p
 
         int numBloomPasses = maxDownsampleLevel - 1;

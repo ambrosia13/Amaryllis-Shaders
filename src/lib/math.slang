@@ -14,6 +14,11 @@ public vector<float, N> linearstep<uint N>(float a, float b, vector<float, N> x)
     return saturate((x - a) / (b - a));
 }
 
+// ...because for some reason slang doesn't have this
+public vector<float, N> mod<int N>(vector<float, N> x, float y) {
+    return x - y * floor(x / y);
+}
+
 // Angle should be in radians
 float2x2 rotationMatrix(float angle) {
     float s = sin(angle);

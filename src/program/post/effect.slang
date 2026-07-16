@@ -12,6 +12,7 @@ import lib.material;
 import lib.lighting;
 import lib.face;
 import lib.color;
+import lib.raytrace;
 
 // for fog
 Texture2D transmittanceLookupTexture;
@@ -112,6 +113,19 @@ FragmentOutput main(float2 pos: SV_Position) {
             float3 reflectedSkyColor = skyCubemapTexture.Sample(apt_linearSampler, reflectedViewDir).rgb;
             drawSunOnAtmosphere(reflectedSkyColor, transmittanceLookupTexture, reflectedViewDir);
 
+            float3 reflectedScreenSpacePos;
+            float3 windowSpacePos = screenSpacePos;
+
+            float3 reflectedRayDir = normalize(sceneSpaceToScreenSpace(sceneSpacePos + reflectedViewDir) - screenSpacePos);
+
+            // bool hit = raytraceDepth(windowSpacePos, reflectedRayDir, reflectedScreenSpacePos);
+            // // reflectedScreenSpacePos.xy /= ap.game.renderSize;
+
+            // if (hit) {
+            //     color = inputTexture.Sample(apt_linearSampler, reflectedScreenSpacePos.xy);
+            // } else {
+            //     color *= 0.0;
+            // }
 
             color.rgb = lerp(color.rgb, reflectedSkyColor, reflectance);
         }

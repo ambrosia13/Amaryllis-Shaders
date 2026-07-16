@@ -1,5 +1,7 @@
 module tonemap;
 
+import aperture;
+
 import lib.color;
 
 // Extracted from JustJohn's tone mapper, see below.
@@ -230,7 +232,7 @@ public float3 justjohnTonemap(float3 sRGB) {
         linearSrgb = mul(XYZ_to_sRGB, justjohn.ICh_to_XYZ(ICh));
     }
 
-    return gammaCorrectSrgb(linearSrgb);
+    return (linearSrgb);
 }
 
 /*
@@ -243,14 +245,14 @@ public float3 justjohnTonemap(float3 sRGB) {
     Changes were made to adapt the code from GLSL to Slang.
 */
 namespace acesFit {
-    static const float3x3 ACES_INPUT_MATRIX = float3x3(
+    public static const float3x3 ACES_INPUT_MATRIX = float3x3(
         float3(0.59719, 0.07600, 0.02840),
         float3(0.35458, 0.90834, 0.13383),
         float3(0.04823, 0.01566, 0.83777)
     );
 
     // ODT_SAT => XYZ => D60_2_D65 => sRGB
-    static const float3x3 ACES_OUTPUT_MATRIX = float3x3(
+    public static const float3x3 ACES_OUTPUT_MATRIX = float3x3(
         float3(1.60475, -0.10208, -0.00327),
         float3(-0.53108, 1.10813, -0.07276),
         float3(-0.07367, -0.00605, 1.07602)
@@ -269,7 +271,7 @@ public float3 acesFitTonemap(float3 color) {
     color = acesFit.rrtAndOdtfFit(color);
 
     float3 linear = mul(color, acesFit.ACES_OUTPUT_MATRIX);
-    return gammaCorrectSrgb(linear);
+    return (linear);
 }
 
 /*
@@ -323,7 +325,7 @@ namespace agxApprox {
         val = mul(agx_mat_inv, val);
         
         // sRGB IEC 61966-2-1 2.2 Exponent Reference EOTF Display
-        //val = pow(val, float3(2.2));
+        val = linearizeSrgb(val);
 
         return val;
     }
@@ -420,4 +422,70 @@ float3 allenwpTonemap(
 	t = t / (t + awp_toe_a);
 
 	return select(x < float3(awp_crossover_point), t, s);
+}
+
+
+public enum CameraResponseCurve {
+    Advantix_100 = 0,
+    Advantix_200 = 3,
+    Advantix_400 = 6,
+    Ektachrome_100 = 9,
+    Ektachrome_100_plus = 12,
+    Ektachrome_320T = 15,
+    Ektachrome_400X = 18,
+    Ektachrome_64 = 21,
+    Ektachrome_64T = 24,
+    Ektachrome_E100S = 27,
+    F125 = 30,
+    F250 = 33,
+    F400 = 36,
+    FCI = 39,
+    Gold_100 = 42,
+    Gold_200 = 45,
+    Kodachrome_200 = 48,
+    Kodachrome_25 = 51,
+    Kodachrome_64 = 54,
+    Max_Zoom_800 = 57,
+    Portra_100T = 60,
+    Portra_160NC = 63,
+    Portra_160VC = 66,
+    Portra_400NC = 69,
+    Portra_400VC = 72,
+    Portra_800 = 75,
+    agfachrome_ctpecisa_200 = 78,
+    agfachrome_ctprecisa_100 = 81,
+    agfachrome_rsx2_050 = 84,
+    agfachrome_rsx2_100 = 87,
+    agfachrome_rsx2_200 = 90,
+    agfacolor_futura_100 = 93,
+    agfacolor_futura_200 = 96,
+    agfacolor_futura_400 = 99,
+    agfacolor_futuraII_100 = 102,
+    agfacolor_futuraII_200 = 105,
+    agfacolor_futuraII_400 = 108,
+    agfacolor_hdc_100_plus = 111,
+    agfacolor_hdc_200_plus = 114,
+    agfacolor_hdc_400_plus = 117,
+    agfacolor_optimaII_100 = 120,
+    agfacolor_optimaII_200 = 123,
+    agfacolor_ultra_050 = 126,
+    agfacolor_vista_100 = 129,
+    agfacolor_vista_200 = 132,
+    agfacolor_vista_400 = 135,
+    agfacolor_vista_800 = 138,
+}
+
+Texture2D<float> dorfCurves;
+
+public float3 applyCameraResponseCurve(float3 color, CameraResponseCurve curve) {
+    float row = float(uint(curve)) + 0.5;
+    
+    float red = dorfCurves.Sample(apt_linearSampler, float2(color.r, row / 141.0));
+    float green = dorfCurves.Sample(apt_linearSampler, float2(color.g, (row + 1.0) / 141.0));
+    float blue = dorfCurves.Sample(apt_linearSampler, float2(color.b, (row + 2.0) / 141.0));
+
+    float3 response = float3(red, green, blue);
+
+    // very close to linear tonemap to soften the clipping
+    return (response);
 }

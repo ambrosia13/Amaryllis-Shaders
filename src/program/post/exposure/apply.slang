@@ -27,12 +27,12 @@ FragmentOutput main(float2 pos: SV_Position) {
     color.rgb = lerp(color.rgb, darkVisionColor, purkinjeAmount);
 
     float sceneLuminance = meteredLuminance[0];
-    sceneLuminance = clamp(sceneLuminance, Brightnesses.NIGHT_SKY_BRIGHTNESS * 0.4, 0.175);
+    sceneLuminance = clamp(sceneLuminance, 0.008, 0.15);
 
     // write back to the buffer so other shaders can access this info
     meteredLuminance[0] = sceneLuminance;
 
-    float ev100 = automaticEV100(sceneLuminance, 1.5);
+    float ev100 = automaticEV100(sceneLuminance, 0.0);
     // ev100 = clamp(ev100, 3.0, 20.0);
 
     float exposure = getExposure(ev100);

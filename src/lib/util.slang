@@ -15,4 +15,3 @@ public float3 getLightVector() {
     float3 sunVector = getSunVector();
     return sunVector * sign(sunVector.y);
 }
-

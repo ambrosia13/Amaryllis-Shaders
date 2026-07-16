@@ -33,7 +33,6 @@ public float manualEV100(float aperture, float shutterSpeed, float iso) {
 public float automaticEV100(float averageLuminance, float exposureCompensation) {
     const float S = 100; // sensor sensitivity or ISO setting
     const float K = 12.5; // light meter calibration constant, realistic scale (assumes realistic lighting values, which we don't have)
-    // const float K = 22.0; // produces roughly middle gray for our lighting output 
 
     return log2(averageLuminance * S / K) - exposureCompensation;
 }
