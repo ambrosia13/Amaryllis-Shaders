@@ -105,7 +105,7 @@ public float3 getValFromTLUT(Texture2D tex, float3 pos, float3 sunDir) {
     float2 uv = float2(clamp(0.5 + 0.5 * sunCosZenithAngle, 0.0, 1.0),
             max(0.0, min(1.0, (height - groundRadiusMM) / (atmosphereRadiusMM - groundRadiusMM))));
 
-    return tex.Sample(apt_linearSampler, uv).rgb;
+    return tex.SampleLevel(apt_linearSampler, uv, 0.0).rgb;
 }
 
 float3 getValFromMultiScattLUT(Texture2D tex, float3 pos, float3 sunDir) {
@@ -115,7 +115,7 @@ float3 getValFromMultiScattLUT(Texture2D tex, float3 pos, float3 sunDir) {
     float2 uv = float2(clamp(0.5 + 0.5 * sunCosZenithAngle, 0.0, 1.0),
             max(0.0, min(1.0, (height - groundRadiusMM) / (atmosphereRadiusMM - groundRadiusMM))));
 
-    return tex.Sample(apt_linearSampler, uv).rgb;
+    return tex.SampleLevel(apt_linearSampler, uv, 0.0).rgb;
 }
 
 // Calculates the actual sky-view! It's a lat-long map (or maybe altitude-azimuth is the better term),
