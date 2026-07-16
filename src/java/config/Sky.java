@@ -13,6 +13,7 @@ public class Sky {
 
     // ensure divisible by 8, for compute dispatch, and a power of two, for generating mips
     public static final int cubemapSize = 256;
+    public static final int cubemapMips = (int) Math.floor(Math.log((double) cubemapSize) / Math.log(2.0));
 
     public final Cubemap cubemap;
 

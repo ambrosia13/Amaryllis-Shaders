@@ -65,7 +65,7 @@ public class Gbuffer {
 
         for (var target : deferredTargets) {
             var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
-                .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
+                .exportFloat("skyCubemapMips", Sky.cubemapMips)
                 .exportInt("shadowCascadeCount", Shadow.cascadeCount)
                 .exportInt("shadowMapSize", Shadow.size)
                 // this is the first write, so no need to flip
@@ -83,7 +83,7 @@ public class Gbuffer {
             // reads from a and writes to b
             .writes("color", mainTextures.write())
             .overrideObject("solidAlbedoTexture", mainTextures.read().name())
-            .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
+            .exportFloat("skyCubemapMips", Sky.cubemapMips)
             .exportInt("shadowCascadeCount", Shadow.cascadeCount)
             .exportInt("shadowMapSize", Shadow.size);
                  
@@ -95,7 +95,7 @@ public class Gbuffer {
         for (var target : forwardTargets) {
             // albedo should blend normally, but aux data should not blend
             var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
-                .exportFloat("skyLutLightSampleLod", Atmosphere.skyLutLightSampleLod)
+                .exportFloat("skyCubemapMips", Sky.cubemapMips)
                 .exportInt("shadowCascadeCount", Shadow.cascadeCount)
                 .exportInt("shadowMapSize", Shadow.size)
                 // since the object shader doesn't read from a texture, but just blends into the existing texture,

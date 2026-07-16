@@ -33,7 +33,7 @@ bool projectShadow(float4 shadowViewSpacePos, uint cascade, out float2 uv, out f
 
 // float blockerSearch()
 
-public float shadowVisibility<R: Rng>(
+public float shadowVisibility<bool PCSS, R: Rng>(
     inout Random<R> random, 
     float4 shadowViewSpacePos, 
     float basePenumbraSize, 
@@ -55,10 +55,15 @@ public float shadowVisibility<R: Rng>(
         if (projectShadow(shadowViewSpacePos, cascade, uv, depth)) {
             float shadow = 0.0;
             
-            for (uint i = 0; i < shadowFilterSamples; i++) {
-                float2 sampleOffset = diskSampling(i, shadowFilterSamples, sqrt(random.getFloat() * TAU)) * basePenumbraSize / shadowSampleOffsetFactor;
-                shadow += ap.opaqueShadow.compare(uv + sampleOffset, int(cascade), depth - 5e-5) / shadowFilterSamples;
+            if (PCSS) {
+                // I know not pcss for now, but let's ignore that
+                for (uint i = 0; i < shadowFilterSamples; i++) {
+                    float2 sampleOffset = diskSampling(i, shadowFilterSamples, sqrt(random.getFloat() * TAU)) * basePenumbraSize / shadowSampleOffsetFactor;
+                    shadow += ap.opaqueShadow.compare(uv + sampleOffset, int(cascade), depth - 5e-5) / shadowFilterSamples;
 
+                }
+            } else {
+                shadow = ap.opaqueShadow.compare(uv, cascade, depth - 5e-5);
             }
 
             return shadow;

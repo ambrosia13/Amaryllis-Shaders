@@ -9,7 +9,7 @@ import lib.math;
 import lib.blockIds;
 
 Texture2D transmittanceLookupTexture;
-Texture2D skyViewTexture;
+TextureCube skyCubemapTexture;
 
 struct FragmentOutput {
     float4 color;
@@ -86,7 +86,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
             // color.rgb = float3(saturate(dot(mat.fragNormal, normalize(ap.celestial.sunPosition))));
             color.rgb *= lighting(
                 transmittanceLookupTexture,
-                skyViewTexture,
+                skyCubemapTexture,
                 coord,
                 input.pos, 
                 mat

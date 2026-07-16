@@ -10,14 +10,14 @@ import lib.palette;
 import lib.random;
 import lib.math;
 
-extern static const float skyLutLightSampleLod = 0.0;
+extern static const uint skyCubemapMips = 0;
 
 static const uint sssSamples = 4;
 static const float sssDepth = 1.0;
 
 public float3 lighting(
     Texture2D transmittanceLut,
-    Texture2D skyView,
+    TextureCube skyCubemap,
     int2 coord,
     float3 sceneSpacePos, 
     Material mat
@@ -34,8 +34,8 @@ public float3 lighting(
     float shadowSunsetFadeFactor = smoothstep(0.01, 0.05, lightVector.y);
 
     float3 atmosphereSpacePos = getAtmosphereViewingPos() + 1e-6 * sceneSpacePos * minecraftToAtmosphereUnitScale;
-    float3 atmosphereAmbientColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * getValFromSkyLUT(skyView, mat.fragNormal, sunVector, skyLutLightSampleLod);
-    float3 atmosphereTopColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * getValFromSkyLUT(skyView, float3(0, 1, 0), sunVector, skyLutLightSampleLod);
+    float3 atmosphereAmbientColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * skyCubemap.SampleLevel(apt_linearSampler, mat.fragNormal, skyCubemapMips).rgb;
+    float3 atmosphereTopColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * skyCubemap.SampleLevel(apt_linearSampler, float3(0, 1, 0), skyCubemapMips).rgb;
 
     // materials with sss should have more uniform looking lighting across faces
     atmosphereAmbientColor = lerp(atmosphereAmbientColor, atmosphereTopColor, mat.sssAmount);
@@ -49,7 +49,7 @@ public float3 lighting(
     float basePenumbraSize = 1.0;
     float4 shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos, distance, mat);
     
-    float sampledShadowFactor = shadowVisibility(random, shadowViewSpacePos, basePenumbraSize, lightVector, mat);
+    float sampledShadowFactor = shadowVisibility<true, Ign>(random, shadowViewSpacePos, basePenumbraSize, lightVector, mat);
 
     float sssDistance = 0.0;
     float lightOpticalDepth = 0.0;
@@ -59,7 +59,7 @@ public float3 lighting(
             sssDistance += (sssDepth * mat.sssAmount) / sssSamples;
 
             shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos + lightVector * sssDistance, distance, mat);
-            float sssShadowFactor = shadowVisibility(random, shadowViewSpacePos, basePenumbraSize + float(i) * 4.0, lightVector, mat);
+            float sssShadowFactor = shadowVisibility<false, Ign>(random, shadowViewSpacePos, basePenumbraSize + float(i) * 4.0, lightVector, mat);
 
             lightOpticalDepth += sssShadowFactor / sssSamples;
         }
@@ -83,6 +83,10 @@ public float3 lighting(
 
     return lighting;
 }
+
+// public float3 translucentVolumeLighting(
+
+// )
 
 public float specularDistribution(float NdotH, float roughness) {
     float a = NdotH * roughness;

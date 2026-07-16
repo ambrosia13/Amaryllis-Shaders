@@ -48,16 +48,16 @@ FragmentOutput main(float2 pos: SV_Position) {
     if (depth != 0.0) {
         color *= lighting(
             transmittanceLookupTexture,
-            skyViewTexture,
+            skyCubemapTexture,
             coord,
             sceneSpacePos, 
             mat
         );
     } else {
         // sky!
-        // color = skyCubemapTexture.Sample(apt_linearSampler, viewDir).rgb;
+        color = skyCubemapTexture.SampleLevel(apt_linearSampler, viewDir, 6).rgb;
 
-        color = getValFromSkyLUT(skyViewTexture, viewDir, getSunVector());
+        // color = getValFromSkyLUT(skyViewTexture, viewDir, getSunVector());
         drawSunOnAtmosphere(color, transmittanceLookupTexture, viewDir);
     }
 
