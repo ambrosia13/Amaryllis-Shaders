@@ -20,6 +20,7 @@ public class Sky {
     public Sky(Screen screen, PipelineConfig pipeline) {
         cubemap = pipeline.cubemap("skyCubemapTexture", skyTextureFormat)
             .size(cubemapSize, cubemapSize)
+            .usesMipmaps() // props to my past self for forgetting to put this here and thinking everything was broken
             .create();
         
         pipeline.stage(ProgramStage.PRE_RENDER)

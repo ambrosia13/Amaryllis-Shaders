@@ -24,7 +24,7 @@ public float3 screenSpaceToSceneSpace(float3 screenSpacePos) {
 }
 
 public float3 sceneSpaceToScreenSpace(float3 sceneSpacePos) {
-    return toScreenSpace(sceneSpacePos, mul(ap.camera.view, ap.camera.projection));
+    return toScreenSpace(sceneSpacePos, mul(ap.camera.projection, ap.camera.view)); // thanks fewizz for noticing wrong matrix order here
 }
 
 public float3 screenSpaceToViewSpace(float3 screenSpacePos) {

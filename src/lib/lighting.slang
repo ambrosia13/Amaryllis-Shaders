@@ -13,7 +13,7 @@ import lib.math;
 extern static const uint skyCubemapMips = 0;
 
 static const uint sssSamples = 4;
-static const float sssDepth = 1.0;
+static const float sssDepth = 2.0;
 
 public float3 lighting(
     Texture2D transmittanceLut,
@@ -37,6 +37,9 @@ public float3 lighting(
     float3 atmosphereAmbientColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * skyCubemap.SampleLevel(apt_linearSampler, mat.fragNormal, skyCubemapMips).rgb;
     float3 atmosphereTopColor = Brightnesses.AMBIENT_SKYLIGHT_BRIGHTNESS * skyCubemap.SampleLevel(apt_linearSampler, float3(0, 1, 0), skyCubemapMips).rgb;
 
+    // ensure bottom faces aren't nearly black because of the sky ground
+    atmosphereAmbientColor = lerp(atmosphereAmbientColor, atmosphereTopColor * 0.75, saturate(-mat.fragNormal.y));
+
     // materials with sss should have more uniform looking lighting across faces
     atmosphereAmbientColor = lerp(atmosphereAmbientColor, atmosphereTopColor, mat.sssAmount);
 
@@ -56,7 +59,7 @@ public float3 lighting(
 
     if (mat.sssAmount != 0.0) {
         for (uint i = 0; i < sssSamples; i++) {
-            sssDistance += (sssDepth * mat.sssAmount) / sssSamples;
+            sssDistance += (sssDepth * mat.sssAmount) / sssSamples * random.getFloat();
 
             shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos + lightVector * sssDistance, distance, mat);
             float sssShadowFactor = shadowVisibility<false, Ign>(random, shadowViewSpacePos, basePenumbraSize + float(i) * 4.0, lightVector, mat);

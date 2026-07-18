@@ -55,9 +55,9 @@ FragmentOutput main(float2 pos: SV_Position) {
         );
     } else {
         // sky!
-        color = skyCubemapTexture.SampleLevel(apt_linearSampler, viewDir, 6).rgb;
+        // color = skyCubemapTexture.SampleLevel(apt_linearSampler, viewDir, 4).rgb;
 
-        // color = getValFromSkyLUT(skyViewTexture, viewDir, getSunVector());
+        color = getValFromSkyLUT(skyViewTexture, viewDir, getSunVector());
         drawSunOnAtmosphere(color, transmittanceLookupTexture, viewDir);
     }
 

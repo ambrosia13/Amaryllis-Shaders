@@ -19,6 +19,7 @@ public class PostPasses {
         // effect pass - for things like reflections and fog
         pipeline.stage(ProgramStage.POST_RENDER)
             .composite("effect", "program/post/effect", "main")
+            .exportInt("hiDepthMaxLevels", hiDepthLevels)
             .overrideObject("inputTexture", mainTextures.read().name())
             .writes("color", mainTextures.write());
         

@@ -110,24 +110,21 @@ FragmentOutput main(float2 pos: SV_Position) {
             float3 reflectance = getReflectance(mat.f0, NdotV, mat.roughness);
 
             float3 reflectedViewDir = reflect(viewDir, mat.fragNormal);
-            float3 reflectedSkyColor = skyCubemapTexture.Sample(apt_linearSampler, reflectedViewDir).rgb;
-            drawSunOnAtmosphere(reflectedSkyColor, transmittanceLookupTexture, reflectedViewDir);
+            float3 reflectColor = skyCubemapTexture.Sample(apt_linearSampler, reflectedViewDir).rgb;
+            drawSunOnAtmosphere(reflectColor, transmittanceLookupTexture, reflectedViewDir);
 
             float3 reflectedScreenSpacePos;
-            float3 windowSpacePos = screenSpacePos;
 
             float3 reflectedRayDir = normalize(sceneSpaceToScreenSpace(sceneSpacePos + reflectedViewDir) - screenSpacePos);
 
-            // bool hit = raytraceDepth(windowSpacePos, reflectedRayDir, reflectedScreenSpacePos);
-            // // reflectedScreenSpacePos.xy /= ap.game.renderSize;
+            bool hit = raytraceDepth(screenSpacePos, reflectedRayDir, reflectedScreenSpacePos);
+            // reflectedScreenSpacePos.xy /= ap.game.renderSize;
 
-            // if (hit) {
-            //     color = inputTexture.Sample(apt_linearSampler, reflectedScreenSpacePos.xy);
-            // } else {
-            //     color *= 0.0;
-            // }
+            if (hit) {
+                reflectColor = inputTexture.Sample(apt_linearSampler, reflectedScreenSpacePos.xy).rgb;
+            }
 
-            color.rgb = lerp(color.rgb, reflectedSkyColor, reflectance);
+            color.rgb = lerp(color.rgb, reflectColor, reflectance);
         }
 
         // apply atmospheric aerial perspective fog to the scene
