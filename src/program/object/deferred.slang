@@ -6,6 +6,7 @@ import lib.space;
 import lib.atmosphere;
 import lib.sky;
 import lib.util;
+import lib.color;
 
 Texture2D solidAlbedoTexture;
 Texture2D<float4> solidMatNormalsTexture;
@@ -46,6 +47,9 @@ FragmentOutput main(float2 pos: SV_Position) {
     float3 viewDir = normalize(sceneSpacePos);
 
     if (depth != 0.0) {
+        // linearize gamma-corrected albedo before lighting
+        color = linearizeSrgb(color);
+
         color *= lighting(
             transmittanceLookupTexture,
             skyCubemapTexture,

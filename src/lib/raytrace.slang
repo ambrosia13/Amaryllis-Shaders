@@ -10,23 +10,37 @@ float getCellSize(uint lod) {
     return 1 << lod;
 }
 
+void getTraversalDists(
+    float3 pos, 
+    float3 dir,
+    uint level,
+    out float2 stepSizes,
+    out float2 nextDist,
+) {
+    float2 cellSpacePos = pos.xy / getCellSize(level);
+    float2 cellSpaceDir = dir.xy / getCellSize(level);
+
+    float2 stepDir = sign(cellSpaceDir); // unitless
+    
+    stepSizes = 1.0 / abs(cellSpaceDir); // in units of cells
+    nextDist = (stepDir * 0.5 + 0.5 - fract(cellSpacePos)) / cellSpaceDir; // in units of cells
+}
+
 public bool raytraceDepth(
     // is (screenCoord, depth)
     float3 screenSpacePos,
     float3 rayDir,
     out float3 intersection,
 ) {
-    uint currentLevel = hiDepthMaxLevels - 1;
+    uint currentLevel = 3;
 
     float3 windowSpacePos = screenSpacePos * float3(ap.game.renderSize, 1.0);
     float3 windowSpaceDir = rayDir * float3(ap.game.renderSize, 1.0);
 
-    float2 cellSpacePos = windowSpacePos.xy / getCellSize(currentLevel);
-    float2 cellSpaceDir = windowSpaceDir.xy / getCellSize(currentLevel);
+    float2 stepSizes;
+    float2 nextDist;
 
-    float2 stepSizes = 1.0 / abs(cellSpaceDir); // in units of cells
-    float2 stepDir = sign(cellSpaceDir); // unitless
-    float2 nextDist = (stepDir * 0.5 + 0.5 - fract(cellSpacePos)) / cellSpaceDir; // in units of cells
+    getTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepSizes, nextDist);
 
     for (uint i = 0; i < 80; i++) {
         float closestDist = min(nextDist.x, nextDist.y); // in units of cells
@@ -59,12 +73,11 @@ public bool raytraceDepth(
             currentLevel -= 1;
 
             // recalculate distances and sizes based on level
-            cellSpacePos = windowSpacePos.xy / getCellSize(currentLevel);
-            cellSpaceDir = windowSpaceDir.xy / getCellSize(currentLevel);
-
-            stepSizes = 1.0 / abs(cellSpaceDir); // in units of cells
-            stepDir = sign(cellSpaceDir); // unitless
-            nextDist = (stepDir * 0.5 + 0.5 - fract(cellSpacePos)) / cellSpaceDir; // in units of cells
+            getTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepSizes, nextDist);
+        } else {
+            // go up a level (?)
+            // currentLevel += 1;
+            // getTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepSizes, nextDist);
         }
     }
 

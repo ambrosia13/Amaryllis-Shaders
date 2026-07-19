@@ -11,6 +11,10 @@ import lib.blockIds;
 Texture2D transmittanceLookupTexture;
 TextureCube skyCubemapTexture;
 
+// built-in pbr textures
+Texture2D blockAtlasN;
+Texture2D blockAtlasS;
+
 struct FragmentOutput {
     float4 color;
 
@@ -24,6 +28,7 @@ struct VertexOutput {
     float4 color : COLOR;
     float2 uv : TEXCOORD;
     float3 normal;
+    float4 tangent;
     float3 light;
     nointerpolation int blockId;
 }
@@ -36,6 +41,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         output.pos = v.pos().xyz;
         output.color = v.color();
         output.normal = v.normal().orElse(-normalize(pos.xyz));
+        output.tangent = v.tangent().orElse(float4(0));
         output.light = float3(v.lightCoord(), v.vertexAO().orElse(1.0));
         output.blockId = v.blockID().hasValue ? v.blockID().value.data.customId : 0;
     }
@@ -47,19 +53,52 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         const float lmcoordLowerBound = 1.0 / 32.0;
         const float lmcoordUpperBound = 31.0 / 32.0;
 
+        float reflectance = 0.04;
+        float roughness = 1.0;
+        float emission = 0.0;
+        float sssAmount = input.blockId == SURFACE_FOLIAGE_ID || input.blockId == FOLIAGE_ID ? 1.0 : 0.0;
+        float ao = input.light.z;
+
+        float3 fragNormal = input.normal;
+
+        if (objectData.albedo().hasValue) {
+            float4 labNormalSample = blockAtlasN.sampleNearest(input.uv);
+            float4 labSpecularSample = blockAtlasS.sampleNearest(input.uv);
+
+            labNormalSample.xy = labNormalSample.xy * 2.0 - 1.0;
+
+            float3 bitangent = cross(input.normal, input.tangent.xyz) * -sign(input.tangent.w);
+            float3x3 tbn = float3x3(input.tangent.xyz, bitangent, input.normal);
+
+            float3 tangentSpaceNormal = float3(
+                labNormalSample.x,
+                labNormalSample.y,
+                sqrt(1.0 - dot(labNormalSample.xy, labNormalSample.xy))
+            );
+
+            fragNormal = mul(tangentSpaceNormal, tbn);
+
+            ao *= labNormalSample.z;
+
+            roughness = pow2(1.0 - labSpecularSample.x);
+            reflectance = linearstep(0.0, 229.0 / 255.0, labSpecularSample.y);
+            sssAmount = linearstep(65.0 / 255.0, 1.0, labSpecularSample.z);
+            emission = labSpecularSample.w;
+        }
+
         Material mat = Material(
             input.normal, // vertex normal
-            input.normal, // fragment normal
+            fragNormal,
 
-            0.04, // reflectance
-            1.0, // roughness
-            input.blockId == SURFACE_FOLIAGE_ID || input.blockId == FOLIAGE_ID ? 1.0 : 0.0, // sss amount
+            reflectance,
+            roughness,
+            sssAmount,
             input.blockId == WATER_ID, // isWater
 
             linearstep(lmcoordLowerBound, lmcoordUpperBound, input.light.x), // blocklight
             linearstep(lmcoordLowerBound, lmcoordUpperBound, input.light.y), // skylight
-            input.light.z, // ambient occlusion
-            0.0 // emission
+            ao, // ambient occlusion
+            emission
         );
 
         // provides more natural looking falloff
@@ -77,11 +116,11 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         // This is equivalent to `if (objectIsCutout && alpha < 0.1) discard;`. It will determine if the object needs it.
         ap.discardCutout(color);
 
-        // convert to linear srgb
-        color.rgb = linearizeSrgb(color.rgb);
-
         if (iris_isTranslucent) {
-            int2 coord = int2(objectData.screenPos.xy);
+            // convert to linear srgb before lighting
+            color.rgb = linearizeSrgb(color.rgb);
+
+        int2 coord = int2(objectData.screenPos.xy);
 
             // color.rgb = float3(saturate(dot(mat.fragNormal, normalize(ap.celestial.sunPosition))));
             color.rgb *= lighting(

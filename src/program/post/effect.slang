@@ -47,6 +47,7 @@ FragmentOutput main(float2 pos: SV_Position) {
     float4 lightSample = solidMatLightTexture[coord];
 
     depth = max(depth, handDepth);
+    opaqueDepth = max(opaqueDepth, handDepth);
 
     float3 screenSpacePos = float3(uv, depth);
     float3 screenSpacePosBack = float3(uv, opaqueDepth);
@@ -122,7 +123,7 @@ FragmentOutput main(float2 pos: SV_Position) {
 
             if (hit) {
                 reflectColor = inputTexture.Sample(apt_linearSampler, reflectedScreenSpacePos.xy).rgb;
-                reflectance = float3(1);
+                // reflectance = float3(1);
             }
 
             color.rgb = lerp(color.rgb, reflectColor, reflectance);
