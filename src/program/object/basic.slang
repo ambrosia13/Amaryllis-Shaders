@@ -61,7 +61,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
 
         float3 fragNormal = input.normal;
 
-        if (objectData.albedo().hasValue) {
+        if (false && objectData.albedo().hasValue) {
             float4 labNormalSample = blockAtlasN.sampleNearest(input.uv);
             float4 labSpecularSample = blockAtlasS.sampleNearest(input.uv);
 

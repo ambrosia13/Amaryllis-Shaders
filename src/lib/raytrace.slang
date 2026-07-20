@@ -70,6 +70,11 @@ public bool raytraceDepth(
 
             // we have to go back a level, so go back to previous position
             windowSpacePos -= windowSpaceDist * windowSpaceDir;
+
+            // ...and then advance to the itnersection with the sampled depth plane
+            float distToSampledDepth = (depthSample - windowSpacePos.z) / windowSpaceDir.z;
+            windowSpacePos += distToSampledDepth * windowSpaceDir;
+
             currentLevel -= 1;
 
             // recalculate distances and sizes based on level
