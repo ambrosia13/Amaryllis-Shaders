@@ -119,7 +119,6 @@ FragmentOutput main(float2 pos: SV_Position) {
             float3 reflectedRayDir = normalize(sceneSpaceToScreenSpace(sceneSpacePos + reflectedViewDir) - screenSpacePos);
 
             bool hit = raytraceDepth(screenSpacePos, reflectedRayDir, reflectedScreenSpacePos);
-            // reflectedScreenSpacePos.xy /= ap.game.renderSize;
 
             if (hit) {
                 reflectColor = inputTexture.Sample(apt_linearSampler, reflectedScreenSpacePos.xy).rgb;

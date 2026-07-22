@@ -14,12 +14,12 @@ public class PostPasses {
     public static final int hiLevelStep = 1; // see hi-z compute shader for details
 
     public static void setup(Screen screen, PipelineConfig pipeline, Atmosphere atmosphere, Gbuffer gbuffer, SwapTexture2D mainTextures) {
-        int hiDepthLevels = hiZPass(screen, pipeline);
+        int hiDepthLevelCount = hiZPass(screen, pipeline);
 
         // effect pass - for things like reflections and fog
         pipeline.stage(ProgramStage.POST_RENDER)
             .composite("effect", "program/post/effect", "main")
-            .exportInt("hiDepthMaxLevels", hiDepthLevels)
+            .exportInt("hiDepthLevelCount", hiDepthLevelCount)
             .overrideObject("inputTexture", mainTextures.read().name())
             .writes("color", mainTextures.write());
         
