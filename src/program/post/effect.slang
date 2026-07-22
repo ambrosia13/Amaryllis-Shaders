@@ -95,11 +95,11 @@ FragmentOutput main(float2 pos: SV_Position) {
                 ap.timing.timeElapsed
             );
 
-            // mat.fragNormal = normalize(
-            //     mul(transpose(tbn), normalize(
-            //         cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
-            //     ))
-            // );
+            mat.fragNormal = normalize(
+                mul(transpose(tbn), normalize(
+                    cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
+                ))
+            );
 
             // color.rg = fract(uv);
         }

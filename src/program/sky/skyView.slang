@@ -9,6 +9,7 @@ import lib.atmosphere;
 import lib.palette;
 import lib.math;
 import lib.util;
+import lib.color;
 
 extern static const uint skyViewWidth; 
 extern static const uint skyViewHeight; 
@@ -91,6 +92,8 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
     float3 skyColor = Brightnesses.ATMOSPHERE_BRIGHTNESS * (
         dayColor + Brightnesses.NIGHT_SKY_BRIGHTNESS * Colors.NIGHT_COLOR * nightColor
     );
+
+    // skyColor = srgbToAcesCg(skyColor);
 
     skyViewTexture.Store(globalInvocationId.xy, float4(skyColor, 1.0));
 }

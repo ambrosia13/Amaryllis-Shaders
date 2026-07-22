@@ -29,6 +29,26 @@ public float3 gammaCorrectSrgb(float3 linear) {
     );
 }
 
+public float3 srgbToAcesCg(float3 srgb) {
+    const float3x3 sRGBtoAP1 = float3x3(
+        0.613097, 0.339523, 0.047379,
+        0.070194, 0.916354, 0.013452,
+        0.020616, 0.109570, 0.869815
+    );
+
+    return mul(sRGBtoAP1, srgb);
+}
+
+public float3 acesCgToSrgb(float3 acesCg) {
+    const float3x3 AP1toSRGB = float3x3(
+        1.704859, -0.621715, -0.083299,
+        -0.130078,  1.140734, -0.010560,
+        -0.023964, -0.128975,  1.153013
+    );
+
+    return mul(AP1toSRGB, acesCg);
+}
+
 /*
     From Emi_V7 in the shaderLABS discord server #snippets.
 */

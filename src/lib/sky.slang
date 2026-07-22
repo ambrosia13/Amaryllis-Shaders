@@ -3,6 +3,7 @@ public module sky;
 import lib.atmosphere;
 import lib.palette;
 import lib.util;
+import lib.color;
 import lib.clouds;
 
 // for when the sky view LUTs aren't enough, like when you're outside the atmosphere looking inwards, or for fog

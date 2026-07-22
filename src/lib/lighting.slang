@@ -8,6 +8,7 @@ import lib.util;
 import lib.atmosphere;
 import lib.palette;
 import lib.random;
+import lib.color;
 import lib.math;
 
 extern static const uint skyCubemapMips = 0;
@@ -81,6 +82,7 @@ public float3 lighting(
     float3 directLightColor = (
         sunVector.y >= 0.0 ? Brightnesses.SUNLIGHT_BRIGHTNESS * Colors.SUN_COLOR : Brightnesses.MOONLIGHT_BRIGHTNESS * Colors.MOON_COLOR
     ) * getValFromTLUT(transmittanceLut, atmosphereSpacePos, lightVector);
+    directLightColor = srgbToAcesCg(directLightColor);
 
     lighting += directLightColor * shadowFactor;
 

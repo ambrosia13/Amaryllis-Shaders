@@ -8,6 +8,7 @@ import aperture;
 
 extern static const int lod;
 
+SamplerState bloomSampler;
 Texture2D inputTexture;
 
 struct FragmentOutput {
@@ -19,19 +20,19 @@ struct FragmentOutput {
 // Temporally stable box filter, as described by Jorge Jiminez, 2014
 // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
 float4 frx_sample13(Texture2D tex, float2 uv, float2 distance, float lod) {
-	float4 a = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-1.0, -1.0), lod);
-	float4 b = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.0, -1.0), lod);
-	float4 c = tex.SampleLevel(apt_linearSampler, uv + distance * float2(1.0, -1.0), lod);
-	float4 d = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-0.5, -0.5), lod);
-	float4 e = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.5, -0.5), lod);
-	float4 f = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-1.0, 0.0), lod);
-	float4 g = tex.SampleLevel(apt_linearSampler, uv, lod);
-	float4 h = tex.SampleLevel(apt_linearSampler, uv + distance * float2(1.0, 0.0), lod);
-	float4 i = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-0.5, 0.5), lod);
-	float4 j = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.5, 0.5), lod);
-	float4 k = tex.SampleLevel(apt_linearSampler, uv + distance * float2(-1.0, 1.0), lod);
-	float4 l = tex.SampleLevel(apt_linearSampler, uv + distance * float2(0.0, 1.0), lod);
-	float4 m = tex.SampleLevel(apt_linearSampler, uv + distance * float2(1.0, 1.0), lod);
+	float4 a = tex.SampleLevel(bloomSampler, uv + distance * float2(-1.0, -1.0), lod);
+	float4 b = tex.SampleLevel(bloomSampler, uv + distance * float2(0.0, -1.0), lod);
+	float4 c = tex.SampleLevel(bloomSampler, uv + distance * float2(1.0, -1.0), lod);
+	float4 d = tex.SampleLevel(bloomSampler, uv + distance * float2(-0.5, -0.5), lod);
+	float4 e = tex.SampleLevel(bloomSampler, uv + distance * float2(0.5, -0.5), lod);
+	float4 f = tex.SampleLevel(bloomSampler, uv + distance * float2(-1.0, 0.0), lod);
+	float4 g = tex.SampleLevel(bloomSampler, uv, lod);
+	float4 h = tex.SampleLevel(bloomSampler, uv + distance * float2(1.0, 0.0), lod);
+	float4 i = tex.SampleLevel(bloomSampler, uv + distance * float2(-0.5, 0.5), lod);
+	float4 j = tex.SampleLevel(bloomSampler, uv + distance * float2(0.5, 0.5), lod);
+	float4 k = tex.SampleLevel(bloomSampler, uv + distance * float2(-1.0, 1.0), lod);
+	float4 l = tex.SampleLevel(bloomSampler, uv + distance * float2(0.0, 1.0), lod);
+	float4 m = tex.SampleLevel(bloomSampler, uv + distance * float2(1.0, 1.0), lod);
 
 	float2 div = (1.0 / 4.0) * float2(0.5, 0.125);
 

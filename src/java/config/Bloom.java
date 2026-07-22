@@ -1,5 +1,7 @@
 package config;
 
+import dev.irisshaders.aperture.api.objects.AddressMode;
+import dev.irisshaders.aperture.api.objects.FilterMode;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
@@ -7,12 +9,20 @@ import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
 
 public class Bloom {
-    public static final TextureFormat bloomTextureFormat = TextureFormat.RG11B10_UFLOAT;
+    public static final TextureFormat bloomTextureFormat = TextureFormat.RG11B10_UFLOAT; 
 
     public final Texture2D downsampleTexture;
     public final Texture2D upsampleTexture;
 
     public Bloom(Screen screen, PipelineConfig pipeline, Texture2D inputTexture, Texture2D outputTexture) {
+        // used for bloom sampling to prevent edges/corners from blowing up the screen
+        pipeline.sampler("bloomSampler")
+            .addressMode(AddressMode.BLACK_BORDER)
+            .magFilter(FilterMode.LINEAR)
+            .minFilter(FilterMode.LINEAR)
+            .mipFilter(FilterMode.LINEAR)
+            .create();
+
         downsampleTexture = pipeline.texture2D("bloomDownsampleTexture", bloomTextureFormat)
             .usesMipmaps()
             .size(screen.renderWidth() / 2, screen.renderHeight() / 2) // half the size of the screen to start with
@@ -34,9 +44,6 @@ public class Bloom {
 
         // subtract 1 here because the first pass was the blit from the input texture to the base lod of the downsample texture
         int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0));
-        maxDownsampleLevel -= 0; // avoid going the whole way all the way to 1x1, to keep some localized effects
-        // maxDownsampleLevel = Math.min(maxDownsampleLevel, 10); // cap it out at 10, which works for 1080p
-
         int numBloomPasses = maxDownsampleLevel - 1;
 
         for (int i = 1; i <= numBloomPasses; i++) {

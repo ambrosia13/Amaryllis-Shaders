@@ -120,7 +120,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
             // convert to linear srgb before lighting
             color.rgb = linearizeSrgb(color.rgb);
 
-        int2 coord = int2(objectData.screenPos.xy);
+            int2 coord = int2(objectData.screenPos.xy);
 
             // color.rgb = float3(saturate(dot(mat.fragNormal, normalize(ap.celestial.sunPosition))));
             color.rgb *= lighting(
