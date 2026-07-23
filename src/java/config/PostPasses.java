@@ -25,21 +25,27 @@ public class PostPasses {
         
         mainTextures.flip();
 
-        // run the exposure metering near the end of teh pipeline
+        // run the exposure metering near the end of teh pipeline, doesn't modify so no need to flip here
         var exposure = new Exposure(screen, pipeline, mainTextures.read(), mainTextures.write());
-
-        mainTextures.flip();
 
         var bloom = new Bloom(screen, pipeline, mainTextures.read(), mainTextures.write());
 
         mainTextures.flip();
 
-        pipeline.loadRawTexture(
-            "dorfCurves", 
-            TextureType.of2D(1024, 141), 
-            TextureFormat.R32_SFLOAT, 
-            RawProvider.fromFile("textures/dorfCurves.dat")
-        );
+        // pipeline.loadRawTexture(
+        //     "dorfCurves", 
+        //     TextureType.of2D(1024, 141), 
+        //     TextureFormat.R32_SFLOAT, 
+        //     RawProvider.fromFile("textures/dorfCurves.dat")
+        // );
+
+        // temporary measure until we can piggyback off a different pass (like taa)
+        pipeline.stage(ProgramStage.POST_RENDER)
+            .composite("applyExposure", "program/post/postProcess", "main")
+            .overrideObject("inputTexture", mainTextures.read().name())
+            .writes("color", mainTextures.write());
+
+        mainTextures.flip();
 
         // combination pass has no explicit outputs and reads from the ping pong
         pipeline.combinationPass("program/post/combination")

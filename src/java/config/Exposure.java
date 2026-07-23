@@ -16,10 +16,6 @@ public class Exposure {
     public static final float minLuminance = 0.000001f; // the min luminance we will account for, selected by choosing an appropriate midnight brightness
     public static final float maxLuminance = 2.0f;
 
-    // Units are in EV
-    public static final float minEV100 = 8.0f;
-    public static final float maxEV100 = -1.0f;
-
     public final Buffer histogram; // containts one uint for each histogram bin
     public final Buffer meteredLuminance; // contains a float for the metered luminance
 
@@ -57,14 +53,6 @@ public class Exposure {
             .exportFloat("minLuminance", minLuminance)
             .exportFloat("maxLuminance", maxLuminance)
             .dispatch1D(1);
-        
-        // temporary measure until we can piggyback off a different pass (like taa)
-        pipeline.stage(ProgramStage.POST_RENDER)
-            .composite("applyExposure", "program/post/exposure/apply", "main")
-            .exportFloat("minEV100", minEV100)
-            .exportFloat("maxEV100", maxEV100)
-            .overrideObject("inputTexture", inputTexture.name())
-            .writes("color", outputTexture);
     }
 
 }

@@ -2,6 +2,8 @@ public module noise;
 
 import aperture;
 
+import lib.math;
+
 // needed for some noise functions, but doesn't directly exist in slang
 vector<float, N> mod<int N>(vector<float, N> x, float y) {
     return x - y * floor(x / y);
@@ -25,17 +27,18 @@ public interface NoiseFunction<int DIM>: ValueNoiseFunction<DIM>, GradientNoiseF
     public NoiseResult<DIM> get(vector<float, DIM> uv, float t);
 }
 
-public float fbm<uint OCTAVES, int DIM, N: ValueNoiseFunction<DIM>>(
+public float fbm<int DIM, N: ValueNoiseFunction<DIM>>(
     N noiseFunction, 
     vector<float, DIM> uv,
-    matrix<float, DIM, DIM> rotationMatrix, 
+    matrix<float, DIM, DIM> rotationMatrix,
+    uint octaves, 
     float lacunarity, 
     float t
 ) {
     float noise = 1e-6;
     float amplitude = 0.5;
 
-    for (uint i = 0; i < OCTAVES; i++) {
+    for (uint i = 0; i < octaves; i++) {
         noise += amplitude * noiseFunction.getValue(uv + mod(t, 1000.0), t);
         uv = mul(rotationMatrix, uv) * lacunarity;
 
@@ -43,20 +46,21 @@ public float fbm<uint OCTAVES, int DIM, N: ValueNoiseFunction<DIM>>(
     }
 
     // ensure normalized range
-    return noise * (OCTAVES + 1.0) / OCTAVES;
+    return noise * (octaves + 1.0) / octaves;
 }
 
-public vector<float, DIM> fbmGradient<uint OCTAVES, int DIM, N: GradientNoiseFunction<DIM>>(
+public vector<float, DIM> fbmGradient<int DIM, N: GradientNoiseFunction<DIM>>(
     N noiseFunction, 
     vector<float, DIM> uv,
     matrix<float, DIM, DIM> rotationMatrix, 
+    uint octaves,
     float lacunarity, 
     float t
 ) {
     vector<float, DIM> grad = 1e-6;
     float amplitude = 0.5;
 
-    for (uint i = 0; i < OCTAVES; i++) {
+    for (uint i = 0; i < octaves; i++) {
         grad += amplitude * noiseFunction.getGradient(uv + mod(t, 1000.0), t);
         uv = mul(rotationMatrix, uv) * lacunarity;
 
@@ -64,7 +68,11 @@ public vector<float, DIM> fbmGradient<uint OCTAVES, int DIM, N: GradientNoiseFun
     }
 
     // ensure normalized range
-    return grad * (OCTAVES + 1.0) / OCTAVES;
+    return grad * (octaves + 1.0) / octaves;
+}
+
+public float fbmSimplex2D(float2 uv, uint octaves, float lacunarity, float t) {
+    return fbm<2, SimplexNoise2D>(SimplexNoise2D(), uv, rotationMatrix(radians(30)), octaves, lacunarity, t);
 }
 
 /*

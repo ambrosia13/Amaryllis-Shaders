@@ -21,7 +21,9 @@ public float3 lighting(
     TextureCube skyCubemap,
     int2 coord,
     float3 sceneSpacePos, 
-    Material mat
+    Material mat,
+    float3 albedo,
+    out float shadowFactor,
 ) {
     float3 lighting = float3(0.0);
 
@@ -71,7 +73,7 @@ public float3 lighting(
 
     float sssTransmittance = exp(-lightOpticalDepth);
 
-    float shadowFactor = sampledShadowFactor * shadowSunsetFadeFactor;
+    shadowFactor = sampledShadowFactor * shadowSunsetFadeFactor;
     
     float NdotL = saturate(dot(mat.fragNormal, lightVector));
     NdotL *= float(dot(mat.vertexNormal, lightVector) >= 0.0);
@@ -85,6 +87,8 @@ public float3 lighting(
     directLightColor = srgbToAcesCg(directLightColor);
 
     lighting += directLightColor * shadowFactor;
+
+    lighting += albedo * mat.emission * 5.0;
 
     return lighting;
 }

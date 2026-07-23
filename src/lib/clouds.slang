@@ -75,7 +75,7 @@ public struct CumulusClouds: CloudType {
         float timeScale = 0.01;
 
         float2 gradient;
-        float shapeNoise = fbm<4>(SimplexNoise2D(), uv * 0.5, rotationMatrix(radians(15)), 2.0, ap.timing.timeElapsed * timeScale) * 0.5 + 0.5;
+        float shapeNoise = fbm(SimplexNoise2D(), uv * 0.5, rotationMatrix(radians(15)), 4, 2.0, ap.timing.timeElapsed * timeScale) * 0.5 + 0.5;
         
         float detailNoise = smoothstep(0.0, 1.0, cellular2DTexture.Sample(apt_linearSampler, fract(uv)).r);
         shapeNoise -= 0.1 * detailNoise;

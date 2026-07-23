@@ -45,6 +45,8 @@ public class Gbuffer {
     public final OutputsAux solidAux;
     public final OutputsAux translucentAux;
 
+    public final Texture2D shadowFactor;
+
     public Gbuffer(PipelineConfig pipeline, SwapTexture2D mainTextures) {
         // since the solid and translucent passes write to the main textures, clear them
         pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), mainTextures.a);
@@ -53,11 +55,22 @@ public class Gbuffer {
         solidAux = new OutputsAux("solid", pipeline, true);
         translucentAux = new OutputsAux("translucent", pipeline, true);
 
+        shadowFactor = pipeline.texture2D("shadowFactorTexture", TextureFormat.R8_SNORM)
+            .renderSize()
+            .create();
+
         var replaceBlendMode = new BlendMode(
             BlendFactors.ONE, 
             BlendFactors.ZERO, 
             BlendFactors.ONE, 
             BlendFactors.ZERO
+        );
+
+        var discardBlendMode = new BlendMode(
+            BlendFactors.ZERO, 
+            BlendFactors.ONE, 
+            BlendFactors.ZERO, 
+            BlendFactors.ONE
         );
 
         ProgramUsage[] deferredTargets = { ProgramUsage.BASIC };
@@ -72,7 +85,8 @@ public class Gbuffer {
                 .writes("color", mainTextures.overwrite())
                 .writes("matNormals", solidAux.matNormalsTexture)
                 .writes("matPbr", solidAux.matPbrTexture)
-                .writes("matLight", solidAux.matLightTexture);
+                .writes("matLight", solidAux.matLightTexture)
+                .writes("shadowFactor", shadowFactor, discardBlendMode);
             
             BlockIdMapping.exportAllIds(builder);
         }
@@ -103,7 +117,8 @@ public class Gbuffer {
                 .writes("color", mainTextures.overwrite())
                 .writes("matNormals", solidAux.matNormalsTexture, replaceBlendMode)
                 .writes("matPbr", solidAux.matPbrTexture, replaceBlendMode)
-                .writes("matLight", solidAux.matLightTexture, replaceBlendMode);
+                .writes("matLight", solidAux.matLightTexture, replaceBlendMode)
+                .writes("shadowFactor", solidAux.matLightTexture, replaceBlendMode);
 
             BlockIdMapping.exportAllIds(builder);
         }

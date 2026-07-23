@@ -71,3 +71,22 @@ public float3 purkinjeShift(float3 rgb) {
     return rgb + mul(lms_gain, lms_gain_to_rgb) * (lmsr.w * 0.05);
 }
 
+/*
+    Referenced from https://www.shadertoy.com/view/llsGDB. Rewritten to be inside one single function.
+*/
+public float3 blackbodyColor(float temperature) {
+    // good luck reading this
+    return select(
+        float3(temperature) <= float3(6600, 6600, 1900), 
+        float3(1, 0.39008157876901960784 * log(temperature / 100.0) - 0.63184144378862745098, 0),
+        saturate(float3(
+            1.29293618606274509804 * pow((temperature - 6000) / 100.0, -0.1332047592),
+            1.12989086089529411765 * pow((temperature - 6000) / 100.0, -0.0755148492),
+            select(
+                temperature >= 6600,
+                1.0,
+                0.54320678911019607843 * log(temperature / 100.0 - 10.0) - 1.19625408914
+            )
+        ))
+    );
+}

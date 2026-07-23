@@ -425,67 +425,67 @@ float3 allenwpTonemap(
 }
 
 
-public enum CameraResponseCurve {
-    Advantix_100 = 0,
-    Advantix_200 = 3,
-    Advantix_400 = 6,
-    Ektachrome_100 = 9,
-    Ektachrome_100_plus = 12,
-    Ektachrome_320T = 15,
-    Ektachrome_400X = 18,
-    Ektachrome_64 = 21,
-    Ektachrome_64T = 24,
-    Ektachrome_E100S = 27,
-    F125 = 30,
-    F250 = 33,
-    F400 = 36,
-    FCI = 39,
-    Gold_100 = 42,
-    Gold_200 = 45,
-    Kodachrome_200 = 48,
-    Kodachrome_25 = 51,
-    Kodachrome_64 = 54,
-    Max_Zoom_800 = 57,
-    Portra_100T = 60,
-    Portra_160NC = 63,
-    Portra_160VC = 66,
-    Portra_400NC = 69,
-    Portra_400VC = 72,
-    Portra_800 = 75,
-    agfachrome_ctpecisa_200 = 78,
-    agfachrome_ctprecisa_100 = 81,
-    agfachrome_rsx2_050 = 84,
-    agfachrome_rsx2_100 = 87,
-    agfachrome_rsx2_200 = 90,
-    agfacolor_futura_100 = 93,
-    agfacolor_futura_200 = 96,
-    agfacolor_futura_400 = 99,
-    agfacolor_futuraII_100 = 102,
-    agfacolor_futuraII_200 = 105,
-    agfacolor_futuraII_400 = 108,
-    agfacolor_hdc_100_plus = 111,
-    agfacolor_hdc_200_plus = 114,
-    agfacolor_hdc_400_plus = 117,
-    agfacolor_optimaII_100 = 120,
-    agfacolor_optimaII_200 = 123,
-    agfacolor_ultra_050 = 126,
-    agfacolor_vista_100 = 129,
-    agfacolor_vista_200 = 132,
-    agfacolor_vista_400 = 135,
-    agfacolor_vista_800 = 138,
-}
+// public enum CameraResponseCurve {
+//     Advantix_100 = 0,
+//     Advantix_200 = 3,
+//     Advantix_400 = 6,
+//     Ektachrome_100 = 9,
+//     Ektachrome_100_plus = 12,
+//     Ektachrome_320T = 15,
+//     Ektachrome_400X = 18,
+//     Ektachrome_64 = 21,
+//     Ektachrome_64T = 24,
+//     Ektachrome_E100S = 27,
+//     F125 = 30,
+//     F250 = 33,
+//     F400 = 36,
+//     FCI = 39,
+//     Gold_100 = 42,
+//     Gold_200 = 45,
+//     Kodachrome_200 = 48,
+//     Kodachrome_25 = 51,
+//     Kodachrome_64 = 54,
+//     Max_Zoom_800 = 57,
+//     Portra_100T = 60,
+//     Portra_160NC = 63,
+//     Portra_160VC = 66,
+//     Portra_400NC = 69,
+//     Portra_400VC = 72,
+//     Portra_800 = 75,
+//     agfachrome_ctpecisa_200 = 78,
+//     agfachrome_ctprecisa_100 = 81,
+//     agfachrome_rsx2_050 = 84,
+//     agfachrome_rsx2_100 = 87,
+//     agfachrome_rsx2_200 = 90,
+//     agfacolor_futura_100 = 93,
+//     agfacolor_futura_200 = 96,
+//     agfacolor_futura_400 = 99,
+//     agfacolor_futuraII_100 = 102,
+//     agfacolor_futuraII_200 = 105,
+//     agfacolor_futuraII_400 = 108,
+//     agfacolor_hdc_100_plus = 111,
+//     agfacolor_hdc_200_plus = 114,
+//     agfacolor_hdc_400_plus = 117,
+//     agfacolor_optimaII_100 = 120,
+//     agfacolor_optimaII_200 = 123,
+//     agfacolor_ultra_050 = 126,
+//     agfacolor_vista_100 = 129,
+//     agfacolor_vista_200 = 132,
+//     agfacolor_vista_400 = 135,
+//     agfacolor_vista_800 = 138,
+// }
 
-Texture2D<float> dorfCurves;
+// Texture2D<float> dorfCurves;
 
-public float3 applyCameraResponseCurve(float3 color, CameraResponseCurve curve) {
-    float row = float(uint(curve)) + 0.5;
+// public float3 applyCameraResponseCurve(float3 color, CameraResponseCurve curve) {
+//     float row = float(uint(curve)) + 0.5;
     
-    float red = dorfCurves.Sample(apt_linearSampler, float2(color.r, row / 141.0));
-    float green = dorfCurves.Sample(apt_linearSampler, float2(color.g, (row + 1.0) / 141.0));
-    float blue = dorfCurves.Sample(apt_linearSampler, float2(color.b, (row + 2.0) / 141.0));
+//     float red = dorfCurves.Sample(apt_linearSampler, float2(color.r, row / 141.0));
+//     float green = dorfCurves.Sample(apt_linearSampler, float2(color.g, (row + 1.0) / 141.0));
+//     float blue = dorfCurves.Sample(apt_linearSampler, float2(color.b, (row + 2.0) / 141.0));
 
-    float3 response = float3(red, green, blue);
+//     float3 response = float3(red, green, blue);
 
-    // very close to linear tonemap to soften the clipping
-    return (response);
-}
+//     // very close to linear tonemap to soften the clipping
+//     return (response);
+// }

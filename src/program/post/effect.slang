@@ -87,10 +87,11 @@ FragmentOutput main(float2 pos: SV_Position) {
             //         float t
             // )
 
-            float2 gradient = 0.01 * fbmGradient<1>(
+            float2 gradient = 0.01 * fbmGradient(
                 SimplexNoise2D(),
                 uv,
                 rotationMatrix(radians(30)),
+                4,
                 2.0,
                 ap.timing.timeElapsed
             );

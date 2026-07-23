@@ -50,12 +50,16 @@ FragmentOutput main(float2 pos: SV_Position) {
         // linearize gamma-corrected albedo before lighting
         color = linearizeSrgb(color);
 
+        float shadowFactor = 1.0;
+
         color *= lighting(
             transmittanceLookupTexture,
             skyCubemapTexture,
             coord,
             sceneSpacePos, 
-            mat
+            mat,
+            color.rgb,
+            shadowFactor
         );
     } else {
         // sky!

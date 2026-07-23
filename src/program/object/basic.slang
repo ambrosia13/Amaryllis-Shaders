@@ -7,6 +7,8 @@ import lib.lighting;
 import lib.color;
 import lib.math;
 import lib.blockIds;
+import lib.face;
+import lib.noise;
 
 Texture2D transmittanceLookupTexture;
 TextureCube skyCubemapTexture;
@@ -21,6 +23,8 @@ struct FragmentOutput {
     float4 matNormals;
     uint4 matPbr;
     float4 matLight;
+
+    float shadowFactor;
 }
 
 struct VertexOutput {
@@ -47,6 +51,8 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
     }
 
     static FragmentOutput shadeSurface(PixelData objectData, VertexOutput input) {
+        FragmentOutput output;
+
         float4 color = input.color;
 
         // needed until aperture gives light attributes in 0-1 range
@@ -113,8 +119,37 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
             color.a = 0.01;
         }
 
+        output.shadowFactor = 1.0;
+
+        if (input.blockId == LAVA_ID) {
+            // TODO: revisit
+            float2 uv = getFaceUv(input.pos + ap.camera.position, mat.vertexNormal);
+            uv = floor(uv * 16.0) / 32.0;
+
+            uv.x += sin(uv.y / 4.0) * 0.5 + cos(uv.y / 2.0) * 0.5;
+
+            float time = ap.timing.timeElapsed * 0.1;
+
+            float noiseA = fbmSimplex2D(uv * float2(2, 1) * 0.7, 12, 2.0, time) * 0.5 + 0.5; 
+            float noiseB = fbmSimplex2D(uv * float2(2, 1) * 0.7 + 0.1, 12, 2.0, time) * 0.5 + 0.5; 
+
+            // large scale detail
+            // float noiseC = fbmSimplex2D<8>(uv / 2.0, 2.0, time) * 0.5 + 0.5;
+
+            float hotLavaFactor = smoothstep(0.0, 0.05, pow2(abs(noiseA - noiseB)));
+
+            float3 coldLavaColor = float3(0.5, 0.15, 0.1) * 0.75;
+            float3 hotLavaColor = float3(2.0, 1.0, 0.05);
+
+            mat.emission = hotLavaFactor;
+            color.rgb = blackbodyColor((hotLavaFactor * 1000.0) + 1500.0) * (hotLavaFactor * 0.9 + 0.1);
+            
+        }
+
         // This is equivalent to `if (objectIsCutout && alpha < 0.1) discard;`. It will determine if the object needs it.
         ap.discardCutout(color);
+
+        float shadowFactor = 1.0;
 
         if (iris_isTranslucent) {
             // convert to linear srgb before lighting
@@ -128,13 +163,13 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
                 skyCubemapTexture,
                 coord,
                 input.pos, 
-                mat
+                mat,
+                color.rgb,
+                output.shadowFactor
             );
 
             // color.rgb = input.pos / 100.0;
         }
-
-        FragmentOutput output;
 
         output.matNormals = mat.packNormals();
         output.matPbr = mat.packPbr();

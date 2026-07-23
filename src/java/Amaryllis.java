@@ -37,6 +37,8 @@ public class Amaryllis implements ShaderPack {
         rendererConfig.setShadowCascades(Shadow.cascadeCount);
         rendererConfig.setShadowDistance(160.0f);
         rendererConfig.setShadowResolution(Shadow.size);
+
+        // rendererConfig.setAmbientOcclusionLevel(0.0f);;
     }
 
     @Override
@@ -47,6 +49,10 @@ public class Amaryllis implements ShaderPack {
 
         if (block.getBlockId().toString().equals("minecraft:water")) {
             return BlockIdMapping.WATER_ID;
+        }
+
+        if (block.getBlockId().toString().equals("minecraft:lava")) {
+            return BlockIdMapping.LAVA_ID;
         }
 
         if (
