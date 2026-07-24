@@ -54,6 +54,7 @@ public bool raytraceDepth(
         float closestDist = min(nextDist.x, nextDist.y); // in units of cells
         float windowSpaceDist = closestDist * getCellSize(currentLevel); // in unit of pixels
 
+        float3 previousWindowSpacePos = windowSpacePos;
         windowSpacePos += windowSpaceDist * windowSpaceDir;
 
         float2 stepAxis = float2(nextDist <= float2(closestDist));
@@ -77,13 +78,10 @@ public bool raytraceDepth(
                 return true;
             }
 
-            // we have to go back a level, so go back to previous position
-            windowSpacePos -= windowSpaceDist * windowSpaceDir;
-
-            // ...and then advance to the itnersection with the sampled depth plane
+            // advance only until the itnersection with the sampled depth plane, instead of the calculated cell advance dist
             // aka the farthest we can go from the currently known information (sampled depth)
-            float distToSampledDepth = max(0.0, (depthSample - windowSpacePos.z) / windowSpaceDir.z);
-            windowSpacePos += distToSampledDepth * windowSpaceDir;
+            float distToSampledDepth = max(0.0, (depthSample - previousWindowSpacePos.z) / windowSpaceDir.z);
+            windowSpacePos = previousWindowSpacePos + distToSampledDepth * windowSpaceDir;
 
             currentLevel -= 1;
 

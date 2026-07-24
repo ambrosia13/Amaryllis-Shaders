@@ -79,14 +79,6 @@ FragmentOutput main(float2 pos: SV_Position) {
 
             float3x3 tbn = inventTbnMatrix(mat.vertexNormal);
 
-            // float2 gradient = fbmGradient<8>(
-            //         N noiseFunction, 
-            //         vector<float, DIM> uv,
-            //         matrix<float, DIM, DIM> rotationMatrix, 
-            //         float lacunarity, 
-            //         float t
-            // )
-
             float2 gradient = 0.01 * fbmGradient(
                 SimplexNoise2D(),
                 uv,
@@ -96,13 +88,11 @@ FragmentOutput main(float2 pos: SV_Position) {
                 ap.timing.timeElapsed
             );
 
-            mat.fragNormal = normalize(
-                mul(transpose(tbn), normalize(
-                    cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
-                ))
-            );
-
-            // color.rg = fract(uv);
+            // mat.fragNormal = normalize(
+            //     mul(transpose(tbn), normalize(
+            //         cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
+            //     ))
+            // );
         }
 
         // apply reflections
