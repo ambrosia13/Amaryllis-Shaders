@@ -25,19 +25,19 @@ Texture2D inputTexture;
 // note that the blog post uses a bin count equal to the workgroup size, rather than an independent number
 groupshared uint localHistogram[histogramBins];
 
-[[numthreads(64, 1, 1)]]
+[[numthreads(256, 1, 1)]]
 [[shader("compute")]]
 void clearHistogram(uint localInvocationIndex: SV_GroupIndex) {
-    for (uint i = localInvocationIndex; i < histogramBins; i += 64) {
+    for (uint i = localInvocationIndex; i < histogramBins; i += 256) {
         histogram[i] = 0;
     }
 }
 
-[[numthreads(8, 8, 1)]]
+[[numthreads(16, 16, 1)]]
 [[shader("compute")]]
 void populateHistogram(uint3 globalInvocationId: SV_DispatchThreadID, uint localInvocationIndex: SV_GroupIndex) {
-    // initialize the local histogram first, assume histogramBins is a multiple of 64 to simplify math
-    for (uint i = localInvocationIndex; i < histogramBins; i += 64) {
+    // initialize the local histogram first, assume histogramBins is a multiple of workgrpup size to simplify math
+    for (uint i = localInvocationIndex; i < histogramBins; i += 256) {
         localHistogram[i] = 0;
     }
 
@@ -54,7 +54,7 @@ void populateHistogram(uint3 globalInvocationId: SV_DispatchThreadID, uint local
 
     GroupMemoryBarrierWithGroupSync();
 
-    for (uint i = localInvocationIndex; i < histogramBins; i += 64) {
+    for (uint i = localInvocationIndex; i < histogramBins; i += 256) {
         InterlockedAdd(histogram[i], localHistogram[i]);
     }
 }

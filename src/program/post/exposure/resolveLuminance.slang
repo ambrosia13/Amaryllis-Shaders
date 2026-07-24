@@ -45,10 +45,10 @@ void writeMeteredLuminanceFromBin(float bin) {
 }
 
 // TODO: see if 16x16x1 workgroups can be used
-[[numthreads(8, 8, 1)]]
+[[numthreads(16, 16, 1)]]
 [[shader("compute")]]
 void averageLuminance(uint3 globalInvocationId: SV_DispatchThreadID, uint localInvocationIndex: SV_GroupIndex) {
-    for (uint i = localInvocationIndex; i < histogramBins; i += 64) {
+    for (uint i = localInvocationIndex; i < histogramBins; i += 256) {
         /*
             From a comment under the blog post:
 
@@ -68,7 +68,7 @@ void averageLuminance(uint3 globalInvocationId: SV_DispatchThreadID, uint localI
     GroupMemoryBarrierWithGroupSync();
 
     for (uint cutoff = histogramBins >> 1; cutoff > 0; cutoff >>= 1) {
-        for (uint i = localInvocationIndex; i < histogramBins; i += 64) {
+        for (uint i = localInvocationIndex; i < histogramBins; i += 256) {
             if (i < cutoff)
                 localHistogram[i] += localHistogram[i + cutoff];
         }
@@ -86,24 +86,22 @@ void averageLuminance(uint3 globalInvocationId: SV_DispatchThreadID, uint localI
     }
 }
 
-[[numthreads(8, 8, 1)]]
+[[numthreads(1, 1, 1)]]
 [[shader("compute")]]
 void percentileLuminance(uint3 globalInvocationId: SV_DispatchThreadID, uint localInvocationIndex: SV_GroupIndex) {
-    if (localInvocationIndex == 0) {
-        uint pixelCount = ap.game.renderSize.x * ap.game.renderSize.y;
-        uint target = uint(pixelCount * percentile);        
+    uint pixelCount = ap.game.renderSize.x * ap.game.renderSize.y;
+    uint target = uint(pixelCount * percentile);        
 
-        uint bin = 0;
-        uint count = 0;
+    uint bin = 0;
+    uint count = 0;
 
-        for (bin = 0; bin < histogramBins; bin++) {
-            count += histogram[bin];
+    for (bin = 0; bin < histogramBins; bin++) {
+        count += histogram[bin];
 
-            if (count >= target) break;
-        }
-
-        writeMeteredLuminanceFromBin(float(bin));
+        if (count >= target) break;
     }
+
+    writeMeteredLuminanceFromBin(float(bin));
 }
 
 
