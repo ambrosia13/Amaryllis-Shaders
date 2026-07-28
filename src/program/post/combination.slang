@@ -22,6 +22,7 @@ float4 main(float2 pos: SV_Position) {
 
     float3 color = outputTexture.SampleLevel(apt_linearSampler, uv, 3.0).rgb;
     
+    color = mul(AP1toSRGB, color);
     color = acesFitTonemap(color * 3.0);
     
     color = gammaCorrectSrgb(color);

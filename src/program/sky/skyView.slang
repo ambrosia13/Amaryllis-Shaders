@@ -93,7 +93,5 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
         dayColor + Brightnesses.NIGHT_SKY_BRIGHTNESS * Colors.NIGHT_COLOR * nightColor
     );
 
-    // skyColor = srgbToAcesCg(skyColor);
-
     skyViewTexture.Store(globalInvocationId.xy, float4(skyColor, 1.0));
 }

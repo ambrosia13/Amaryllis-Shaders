@@ -53,9 +53,15 @@ public float3 lighting(
     lighting *= mat.ambientOcclusion;
 
     float basePenumbraSize = 1.0;
-    float4 shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos, distance, mat);
-    
-    float sampledShadowFactor = shadowVisibility<true, Ign>(random, shadowViewSpacePos, lightVector, mat, basePenumbraSize, 8);
+
+    float4 shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos, distance, mat.vertexNormal);
+
+    float3 shadowScreenSpacePos;
+    uint cascade = selectShadowCascade(shadowViewSpacePos, shadowScreenSpacePos);
+
+    bool shadowOutOfBounds;
+    float sampledShadowFactor = shadowVisibility<true, Ign>(random, cascade, shadowScreenSpacePos, basePenumbraSize, 8, shadowOutOfBounds);
+    sampledShadowFactor = select(shadowOutOfBounds, float(dot(mat.vertexNormal, lightVector) > 0.001), sampledShadowFactor);
 
     float sssDistance = 0.0;
     float lightOpticalDepth = 0.0;
@@ -64,8 +70,10 @@ public float3 lighting(
         for (uint i = 0; i < sssSamples; i++) {
             sssDistance += (sssDepth * mat.sssAmount) / sssSamples * random.getFloat();
 
-            shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos + lightVector * sssDistance, distance, mat);
-            float sssShadowFactor = shadowVisibility<false, Ign>(random, shadowViewSpacePos, lightVector, mat, basePenumbraSize + float(i) * 4.0, 2);
+            shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos + lightVector * sssDistance, distance, float3(0));
+            cascade = selectShadowCascade(shadowViewSpacePos, shadowScreenSpacePos);
+            float sssShadowFactor = shadowVisibility<true, Ign>(random, cascade, shadowScreenSpacePos, basePenumbraSize, 8, shadowOutOfBounds);
+            sssShadowFactor = select(shadowOutOfBounds, float(dot(mat.vertexNormal, lightVector) > 0.001), sssShadowFactor);
 
             lightOpticalDepth += sssShadowFactor / sssSamples;
         }
@@ -84,7 +92,6 @@ public float3 lighting(
     float3 directLightColor = (
         sunVector.y >= 0.0 ? Brightnesses.SUNLIGHT_BRIGHTNESS * Colors.SUN_COLOR : Brightnesses.MOONLIGHT_BRIGHTNESS * Colors.MOON_COLOR
     ) * getValFromTLUT(transmittanceLut, atmosphereSpacePos, lightVector);
-    directLightColor = srgbToAcesCg(directLightColor);
 
     lighting += directLightColor * shadowFactor;
 

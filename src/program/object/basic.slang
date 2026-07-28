@@ -154,8 +154,9 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
         float shadowFactor = 1.0;
 
         if (forwardLit) {
-            // convert to linear srgb before lighting
+            // convert to working color space before lighting
             color.rgb = linearizeSrgb(color.rgb);
+            color.rgb = mul(sRGBtoAP1, color.rgb);
 
             int2 coord = int2(objectData.screenPos.xy);
 

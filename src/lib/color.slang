@@ -1,3 +1,15 @@
+public static const float3x3 sRGBtoAP1 = float3x3(
+    0.613097, 0.339523, 0.047379,
+    0.070194, 0.916354, 0.013452,
+    0.020616, 0.109570, 0.869815
+);
+
+public static const float3x3 AP1toSRGB = float3x3(
+    1.704859, -0.621715, -0.083299,
+    -0.130078,  1.140734, -0.010560,
+    -0.023964, -0.128975,  1.153013
+);
+
 // see https://github.com/vram-guild/frex/blob/1.19/common/src/main/resources/assets/frex/shaders/lib/math.glsl
 public float luminance(float3 color) {
     return dot(color.rgb, float3(0.299, 0.587, 0.114));
@@ -27,26 +39,6 @@ public float3 gammaCorrectSrgb(float3 linear) {
         12.92 * linear,
         1.055 * pow(linear, float3(1.0 / 2.4)) - 0.055,
     );
-}
-
-public float3 srgbToAcesCg(float3 srgb) {
-    const float3x3 sRGBtoAP1 = float3x3(
-        0.613097, 0.339523, 0.047379,
-        0.070194, 0.916354, 0.013452,
-        0.020616, 0.109570, 0.869815
-    );
-
-    return mul(sRGBtoAP1, srgb);
-}
-
-public float3 acesCgToSrgb(float3 acesCg) {
-    const float3x3 AP1toSRGB = float3x3(
-        1.704859, -0.621715, -0.083299,
-        -0.130078,  1.140734, -0.010560,
-        -0.023964, -0.128975,  1.153013
-    );
-
-    return mul(AP1toSRGB, acesCg);
 }
 
 /*

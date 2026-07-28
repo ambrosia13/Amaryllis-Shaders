@@ -10,6 +10,7 @@ public module atmosphere;
 import aperture;
 
 import lib.math;
+import lib.color;
 
 // Units are in megameters.
 static const float groundRadiusMM = 6.360;
@@ -18,13 +19,13 @@ static const float atmosphereRadiusMM = 6.460;
 static const float3 groundAlbedo = float3(0.3);
 
 // Units are per-megameter
-static const float3 rayleighScatteringBase = float3(5.802, 13.558, 33.1);
+static const float3 rayleighScatteringBase = mul(sRGBtoAP1, float3(5.802, 13.558, 33.1));
 static const float rayleighAbsorptionBase = 0.0;
 
 static const float mieScatteringBase = 25.996;
 static const float mieAbsorptionBase = 4.4;
 
-static const float3 ozoneAbsorptionBase = float3(0.650, 1.881, 0.085);
+static const float3 ozoneAbsorptionBase = mul(sRGBtoAP1, float3(0.650, 1.881, 0.085));
 
 // One minecraft block is equivalent to this many meters in the atmosphere
 public static const float minecraftToAtmosphereUnitScale = 25.0;

@@ -74,7 +74,7 @@ public class Gbuffer {
         );
 
         ProgramUsage[] deferredTargets = { ProgramUsage.BASIC };
-        ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT, ProgramUsage.HAND, ProgramUsage.TRANSLUCENT_HAND };
+        ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT };
 
         for (var target : deferredTargets) {
             var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
@@ -123,8 +123,36 @@ public class Gbuffer {
 
             BlockIdMapping.exportAllIds(builder);
         }
+    }
 
+    public void renderHand(PipelineConfig pipeline, SwapTexture2D mainTextures) {
+        var replaceBlendMode = new BlendMode(
+            BlendFactors.ONE, 
+            BlendFactors.ZERO, 
+            BlendFactors.ONE, 
+            BlendFactors.ZERO
+        );
 
+        ProgramUsage[] handTargets = { ProgramUsage.HAND, ProgramUsage.TRANSLUCENT_HAND };
+
+         for (var target : handTargets) {
+            // albedo should blend normally, but aux data should not blend
+            var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
+                .exportFloat("skyCubemapMips", Sky.cubemapMips)
+                .exportInt("shadowCascadeCount", Shadow.cascadeCount)
+                .exportInt("shadowMapSize", Shadow.size)
+                .exportBool("forwardLit", true)
+                // since the object shader doesn't read from a texture, but just blends into the existing texture,
+                // don't use the flipped one for writing
+                .writes("color", mainTextures.overwrite())
+                .writes("matNormals", solidAux.matNormalsTexture, replaceBlendMode)
+                .writes("matPbr", solidAux.matPbrTexture, replaceBlendMode)
+                .writes("matLight", solidAux.matLightTexture, replaceBlendMode)
+                .writes("shadowFactor", solidAux.matLightTexture, replaceBlendMode);
+
+            BlockIdMapping.exportAllIds(builder);
+        }
+       
     }
 
 }

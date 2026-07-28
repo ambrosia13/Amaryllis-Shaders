@@ -54,8 +54,9 @@ FragmentOutput main(float2 pos: SV_Position) {
     // }
 
     if (depth != 0.0) {
-        // linearize gamma-corrected albedo before lighting
+        // convert to working color space before lighting
         color = linearizeSrgb(color);
+        color = mul(sRGBtoAP1, color);
 
         float shadowFactor = 1.0;
 

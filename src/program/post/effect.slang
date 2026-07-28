@@ -13,6 +13,7 @@ import lib.lighting;
 import lib.face;
 import lib.color;
 import lib.raytrace;
+import lib.shadows;
 
 // for fog
 Texture2D transmittanceLookupTexture;
@@ -27,6 +28,8 @@ Texture2D<float4> solidMatLightTexture;
 
 Texture2D inputTexture;
 
+Texture2D preOverlayHistory;
+
 struct FragmentOutput {
     float4 color;
 }
@@ -36,7 +39,9 @@ FragmentOutput main(float2 pos: SV_Position) {
     float2 uv = pos / ap.game.renderSize;
     uint2 coord = uint2(pos);
 
-    float4 color = inputTexture.Sample(apt_linearSampler, uv);
+    Random<Ign> random = Random<Ign>(Ign(int2(coord), ap.timing.frameCounter));
+
+    float3 color = inputTexture.Sample(apt_linearSampler, uv).rgb;
 
     float depth = ap.depth[coord];
     // float handDepth = ap.handDepth[coord];
@@ -62,15 +67,73 @@ FragmentOutput main(float2 pos: SV_Position) {
     Material mat = Material.unpack(normalSample, pbrSample, lightSample);
 
     if (depth != 0.0) {
+        float3 atmosphereTopColor = skyCubemapTexture.SampleLevel(apt_linearSampler, float3(0, 1, 0), skyCubemapMips).rgb;
+
         // water effects
-        if (mat.isWater()) {
+        if (mat.isWater() || ap.camera.fluid == 1) {
             // first: water fog and absorption
-            float waterThickness = distanceBack - distance;
-            float transmittance = exp(-waterThickness * 0.1);
-            float3 waterScatteringColor = 0.05 * normalizeLuminance(linearizeSrgb(float3(0.1, 0.7, 0.8))) * mat.skyLight;
+            float waterThickness = ap.camera.fluid == 0 ? distanceBack - distance : distance;
 
-            color.rgb = lerp(waterScatteringColor, color.rgb, transmittance);
+            float3 waterColor = normalizeLuminance(linearizeSrgb(float3(0.1, 0.7, 0.8)));
 
+            float waterDensity = 0.1;
+            float opticalDepth = waterThickness;
+            float lightOpticalDepth = 0.0;
+            uint waterScatteringSteps = 8;
+            uint waterScatteringSecondarySteps = 8;
+
+            float3 waterScattering = float3(0.0);
+
+            float3 lightVector = getLightVector();
+
+            float VdotL = (dot(viewDir, lightVector));
+
+            for (uint i = 0; i < waterScatteringSteps; i++) {
+                float3 rayPos = lerp(ap.camera.fluid == 1 ? float3(0) : sceneSpacePos, sceneSpacePosBack, (i + random.getFloat()) / float(waterScatteringSteps));
+
+                float4 shadowViewSpacePos = setupShadowViewSpacePos(rayPos, 0, float3(0));
+                float3 shadowScreenSpacePos;
+                uint cascade = selectShadowCascade(shadowViewSpacePos, shadowScreenSpacePos);
+
+                // float sampledShadowDepth = ap.shadow.sampleLinear(shadowScreenSpacePos.xy, cascade);
+                // float lightDist = max(0.0, ((sampledShadowDepth - shadowScreenSpacePos.z) - 256.05) * (256 - (-256.05)));
+                // float inScattering = exp(-lightDist * waterDensity) * getMiePhase(VdotL, 0.5) * 0.9 + 0.1;
+
+                // waterScattering += waterColor * inScattering * exp(-length(rayPos));
+
+                float viewDepth = select(ap.camera.fluid == 1, length(rayPos), length(rayPos - sceneSpacePos));
+                float viewTransmittance = exp(-viewDepth * waterDensity);
+
+                bool outOfBounds;
+                waterScattering += waterColor 
+                    * (shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds)) / waterScatteringSteps
+                    * getValFromTLUT(transmittanceLookupTexture, getAtmosphereViewingPos(), lightVector)
+                    // * viewTransmittance
+                    * getMiePhase(VdotL, 0.5)
+                    + waterColor * atmosphereTopColor / waterScatteringSteps * mat.skyLight * 0.1;
+
+                // float sampledShadowDepth = ap.shadow.sampleLinear(shadowScreenSpacePos.xy, cascade);
+
+                // for (uint j = 0; j < waterScatteringSecondarySteps; j++) {
+                    
+
+                    
+                //     bool outOfBounds;
+                //     float shadowFactor = shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds);
+                // }
+            }
+
+            float phase = getMiePhase(dot(viewDir, lightVector), 0.7);
+            float transmittance = exp(-opticalDepth * waterDensity);
+            float3 waterScatteringColor = 0.05 * normalizeLuminance(linearizeSrgb(float3(0.1, 0.7, 0.8))) * (0.5 + phase);
+            // float3 waterScattering = waterScatteringColor * (1 - lightOpticalDepth);
+            
+            color.rgb = lerp(waterScattering, color.rgb, transmittance);
+            // color = float3(exp(-lightOpticalDepth));
+
+        }
+
+        if (mat.isWater()) {
             // now fix up normals and pbr parameters
             mat.roughness = 0.0;
             mat.f0 = 0.04;
@@ -88,11 +151,12 @@ FragmentOutput main(float2 pos: SV_Position) {
                 ap.timing.timeElapsed
             );
 
-            // mat.fragNormal = normalize(
-            //     mul(transpose(tbn), normalize(
-            //         cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
-            //     ))
-            // );
+            mat.fragNormal = normalize(
+                mul(transpose(tbn), normalize(
+                    cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
+                ))
+            );
+
         }
 
         // apply reflections
@@ -112,28 +176,30 @@ FragmentOutput main(float2 pos: SV_Position) {
             bool hit = raytraceDepth(screenSpacePos, reflectedRayDir, reflectedScreenSpacePos);
 
             if (hit) {
-                reflectColor = inputTexture.Sample(apt_linearSampler, reflectedScreenSpacePos.xy).rgb;
+                reflectColor = preOverlayHistory.Sample(apt_linearSampler, reflectedScreenSpacePos.xy).rgb;
                 // reflectance = float3(1);
             }
 
             color.rgb = lerp(color.rgb, reflectColor, reflectance);
         }
 
-        // apply atmospheric aerial perspective fog to the scene
-        float3 fogTransmittance;
-        float3 fogScattering = raymarchAtmosphere(
-            transmittanceLookupTexture,
-            multiscatteringLookupTexture,
-            getAtmosphereViewingPos(),
-            viewDir,
-            0.0,
-            distance * 1e-6 * minecraftToAtmosphereUnitScale,
-            8, // based on eyeballing, we can go this low without a noticeable drop in quality at all times of day
-            fogTransmittance
-        );
+        if (ap.camera.fluid == 0) {
+            // apply atmospheric aerial perspective fog to the scene
+            float3 fogTransmittance;
+            float3 fogScattering = raymarchAtmosphere(
+                transmittanceLookupTexture,
+                multiscatteringLookupTexture,
+                getAtmosphereViewingPos(),
+                viewDir,
+                0.0,
+                distance * 1e-6 * minecraftToAtmosphereUnitScale,
+                8, // based on eyeballing, we can go this low without a noticeable drop in quality at all times of day
+                fogTransmittance
+            );
 
-        // color.rgb = fogScattering;
-        color.rgb = lerp(color.rgb, color.rgb * fogTransmittance + fogScattering, ap.camera.brightness.y);
+            // color.rgb = fogScattering;
+            color.rgb = lerp(color.rgb, color.rgb * fogTransmittance + fogScattering, ap.camera.brightness.y);
+        }
     }
 
     // TextureNoise2D texNoise = TextureNoise2D(cellular2DTexture);
@@ -150,5 +216,5 @@ FragmentOutput main(float2 pos: SV_Position) {
     //     drawCloudsOnAtmosphere<CumulusClouds>(color.rgb, transmittanceLookupTexture, skyViewTexture, viewDir, bleh);
     // }
 
-    return FragmentOutput(color);
+    return FragmentOutput(float4(color, 1));
 }

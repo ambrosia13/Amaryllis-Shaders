@@ -2,6 +2,7 @@ package config;
 
 import dev.irisshaders.aperture.api.commands.MipCalculator;
 import dev.irisshaders.aperture.api.objects.Screen;
+import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
@@ -14,18 +15,28 @@ public class PostPasses {
     public static final int hiDepthMaxLevels = 5; // 0, 2, 4, 6, 8
     public static final int hiLevelStep = 1; // see hi-z compute shader for details
 
-    public static void setup(Screen screen, PipelineConfig pipeline, Atmosphere atmosphere, Gbuffer gbuffer, SwapTexture2D mainTextures) {
+    public static void beforeHandRender(Screen screen, PipelineConfig pipeline, Atmosphere atmosphere, Gbuffer gbuffer, SwapTexture2D mainTextures) {
         int hiDepthLevelCount = hiZPass(screen, pipeline);
 
         // effect pass - for things like reflections and fog
         pipeline.stage(ProgramStage.PRE_OVERLAY)
             .composite("effect", "program/post/effect", "main")
             .exportInt("hiDepthLevelCount", hiDepthLevelCount)
+            .exportInt("shadowMapSize", Shadow.size)
             .overrideObject("inputTexture", mainTextures.read().name())
             .writes("color", mainTextures.write());
-        
+
         mainTextures.flip();
 
+        Texture2D preOverlayHistory = pipeline.texture2D("preOverlayHistory", mainTextures.a.format())
+            .renderSize()
+            .create();
+
+        pipeline.stage(ProgramStage.PRE_OVERLAY)
+            .copy(mainTextures.read(), preOverlayHistory);
+    }
+
+    public static void afterHandRender(Screen screen, PipelineConfig pipeline, Atmosphere atmosphere, Gbuffer gbuffer, SwapTexture2D mainTextures) {
         // run the exposure metering near the end of teh pipeline, doesn't modify so no need to flip here
         var exposure = new Exposure(screen, pipeline, mainTextures.read(), mainTextures.write());
 
@@ -68,7 +79,7 @@ public class PostPasses {
             .dispatch2D(wgc.x, wgc.y);
 
         int minDimension = Math.min(screen.renderWidth(), screen.renderHeight());
-        int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0));
+        int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0)) - 3;
 
         // int i;
 
