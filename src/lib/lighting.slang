@@ -55,7 +55,7 @@ public float3 lighting(
     float basePenumbraSize = 1.0;
     float4 shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos, distance, mat);
     
-    float sampledShadowFactor = shadowVisibility<true, Ign>(random, shadowViewSpacePos, basePenumbraSize, lightVector, mat);
+    float sampledShadowFactor = shadowVisibility<true, Ign>(random, shadowViewSpacePos, lightVector, mat, basePenumbraSize, 8);
 
     float sssDistance = 0.0;
     float lightOpticalDepth = 0.0;
@@ -65,7 +65,7 @@ public float3 lighting(
             sssDistance += (sssDepth * mat.sssAmount) / sssSamples * random.getFloat();
 
             shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos + lightVector * sssDistance, distance, mat);
-            float sssShadowFactor = shadowVisibility<false, Ign>(random, shadowViewSpacePos, basePenumbraSize + float(i) * 4.0, lightVector, mat);
+            float sssShadowFactor = shadowVisibility<false, Ign>(random, shadowViewSpacePos, lightVector, mat, basePenumbraSize + float(i) * 4.0, 2);
 
             lightOpticalDepth += sssShadowFactor / sssSamples;
         }

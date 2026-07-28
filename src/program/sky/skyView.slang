@@ -72,7 +72,7 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
         Colors.SUN_COLOR, 
         1.0,
         tMax, 
-        float(numScatteringSteps),
+        numScatteringSteps,
         transmittance
     );
 
@@ -85,7 +85,7 @@ void skyView(uint3 globalInvocationId: SV_DispatchThreadID) {
         Colors.MOON_COLOR, 
         1.0,
         tMax, 
-        float(numScatteringSteps),
+        numScatteringSteps,
         transmittance
     );
 

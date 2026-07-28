@@ -38,6 +38,7 @@ public class Amaryllis implements ShaderPack {
         rendererConfig.setShadowDistance(160.0f);
         rendererConfig.setShadowResolution(Shadow.size);
 
+        rendererConfig.setDirectionalShading(false);
         // rendererConfig.setAmbientOcclusionLevel(0.0f);;
     }
 

@@ -74,7 +74,7 @@ public class Gbuffer {
         );
 
         ProgramUsage[] deferredTargets = { ProgramUsage.BASIC };
-        ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT };
+        ProgramUsage[] forwardTargets = { ProgramUsage.TRANSLUCENT, ProgramUsage.HAND, ProgramUsage.TRANSLUCENT_HAND };
 
         for (var target : deferredTargets) {
             var builder = pipeline.object(target, "program/object/basic", "GbufferShader")
@@ -112,6 +112,7 @@ public class Gbuffer {
                 .exportFloat("skyCubemapMips", Sky.cubemapMips)
                 .exportInt("shadowCascadeCount", Shadow.cascadeCount)
                 .exportInt("shadowMapSize", Shadow.size)
+                .exportBool("forwardLit", true)
                 // since the object shader doesn't read from a texture, but just blends into the existing texture,
                 // don't use the flipped one for writing
                 .writes("color", mainTextures.overwrite())

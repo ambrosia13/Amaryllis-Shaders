@@ -6,11 +6,11 @@ extern static const uint hiDepthLevelCount;
 
 Texture2D<float> hiDepthTexture;
 
-float getCellSize(uint lod) {
+float getHiZCellSize(uint lod) {
     return 1 << lod;
 }
 
-void getTraversalDists(
+void getHiZTraversalDists(
     float3 pos, 
     float3 dir,
     uint level,
@@ -19,8 +19,8 @@ void getTraversalDists(
     out float2 nextDist,
     out int2 cell
 ) {
-    float2 cellSpacePos = pos.xy / getCellSize(level);
-    float2 cellSpaceDir = dir.xy / getCellSize(level);
+    float2 cellSpacePos = pos.xy / getHiZCellSize(level);
+    float2 cellSpaceDir = dir.xy / getHiZCellSize(level);
 
     stepDir = sign(cellSpaceDir); // unitless
     
@@ -45,14 +45,14 @@ public bool raytraceDepth(
     float2 stepDir, stepSizes, nextDist;
     int2 cell;
 
-    getTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
+    getHiZTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
 
     for (uint i = 0; i < 80; i++) {
         // if direction is axis aligned (ie one axis is zero), discourage stepping along that axis because step size there is inf or nan
         nextDist = select(abs(windowSpaceDir.xy) < 0.00001, float2(float.maxValue), nextDist);
         
         float closestDist = min(nextDist.x, nextDist.y); // in units of cells
-        float windowSpaceDist = closestDist * getCellSize(currentLevel); // in unit of pixels
+        float windowSpaceDist = closestDist * getHiZCellSize(currentLevel); // in unit of pixels
 
         float3 previousWindowSpacePos = windowSpacePos;
         windowSpacePos += windowSpaceDist * windowSpaceDir;
@@ -86,17 +86,79 @@ public bool raytraceDepth(
             currentLevel -= 1;
 
             // recalculate distances and sizes based on level
-            getTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
+            getHiZTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
         } else {
             bool parentCellAdvanced = any((previousCell >> 1) != (cell >> 1));
 
             // go up a level if outside the confines of the parent cell we descended from
             if (currentLevel < maxLevel && parentCellAdvanced) {
                 currentLevel += 1;
-                getTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
+                getHiZTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
             }
         }
     }
 
     return false;
 }
+
+void getVoxelTraversalDists(
+    float3 pos, 
+    float3 dir,
+    uint level,
+    out float3 stepDir,
+    out float3 stepSizes,
+    out float3 nextDist,
+    out int3 cell
+) {
+    stepDir = sign(dir);
+    
+    stepSizes = 1.0 / abs(dir); 
+    nextDist = (stepDir * 0.5 + 0.5 - fract(pos)) / dir;
+
+    cell = int3(floor(pos));
+}
+
+public struct VoxelHit {
+    public float3 pos;
+    public float3 normal;
+}
+
+public bool raytraceVoxelMap(
+    float3 pos,
+    float3 dir,
+    uint steps,
+    // float maxT,
+    out VoxelHit hit,
+) {
+    hit.pos = pos;
+    
+    float3 stepDir, stepSizes, nextDist;
+    int3 cell;
+
+    getVoxelTraversalDists(pos, dir, 0, stepDir, stepSizes, nextDist, cell);
+
+    for (uint i = 0; i < steps; i++) {
+        float closestDist = min3(nextDist.x, nextDist.y, nextDist.z);
+
+        hit.pos += dir * closestDist;
+
+        float3 stepAxis = float3(nextDist <= float3(closestDist));
+
+        cell += int3(stepAxis * stepDir);
+
+        nextDist -= closestDist;
+        nextDist += stepSizes * stepAxis;
+
+        hit.normal = stepAxis;
+
+        if (ap.blocks[ap.voxel[cell]].isFullBlock) {
+            hit.pos -= ap.camera.position;
+            hit.normal *= -stepDir;
+            
+            return true;
+        }
+    }
+
+    return false;
+}
+

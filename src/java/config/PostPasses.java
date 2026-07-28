@@ -1,5 +1,6 @@
 package config;
 
+import dev.irisshaders.aperture.api.commands.MipCalculator;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
@@ -17,7 +18,7 @@ public class PostPasses {
         int hiDepthLevelCount = hiZPass(screen, pipeline);
 
         // effect pass - for things like reflections and fog
-        pipeline.stage(ProgramStage.POST_RENDER)
+        pipeline.stage(ProgramStage.PRE_OVERLAY)
             .composite("effect", "program/post/effect", "main")
             .exportInt("hiDepthLevelCount", hiDepthLevelCount)
             .overrideObject("inputTexture", mainTextures.read().name())
@@ -62,29 +63,32 @@ public class PostPasses {
         
         var wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, 0);
 
-        pipeline.stage(ProgramStage.POST_RENDER)
+        pipeline.stage(ProgramStage.PRE_OVERLAY)
             .compute("copyFirstDepth", "program/hiZ", "copyFirstDepth")
             .dispatch2D(wgc.x, wgc.y);
 
         int minDimension = Math.min(screen.renderWidth(), screen.renderHeight());
         int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0));
 
-        int i;
+        // int i;
 
-        for (i = hiLevelStep; i < hiDepthMaxLevels; i++) {
-            int level = i * hiLevelStep;
+        pipeline.stage(ProgramStage.PRE_OVERLAY)
+            .generateMips(MipCalculator.MAX, hiDepthTexture);
 
-            if (level > maxDownsampleLevel) break;
+        // for (i = hiLevelStep; i < hiDepthMaxLevels; i++) {
+        //     int level = i * hiLevelStep;
 
-            wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, level);
+        //     if (level > maxDownsampleLevel) break;
 
-            pipeline.stage(ProgramStage.POST_RENDER)
-                .compute("depthDownsample" + level, "program/hiZ", "depthDownsample")
-                .exportInt("srcLod", level - hiLevelStep)
-                .exportInt("dstLod", level)
-                .dispatch2D(wgc.x, wgc.y);
-        }
+        //     wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, level);
 
-        return i;
+        //     pipeline.stage(ProgramStage.PRE_OVERLAY)
+        //         .compute("depthDownsample" + level, "program/hiZ", "depthDownsample")
+        //         .exportInt("srcLod", level - hiLevelStep)
+        //         .exportInt("dstLod", level)
+        //         .dispatch2D(wgc.x, wgc.y);
+        // }
+
+        return maxDownsampleLevel;
     }
 }

@@ -39,15 +39,15 @@ FragmentOutput main(float2 pos: SV_Position) {
     float4 color = inputTexture.Sample(apt_linearSampler, uv);
 
     float depth = ap.depth[coord];
-    float handDepth = ap.handDepth[coord];
+    // float handDepth = ap.handDepth[coord];
     float opaqueDepth = ap.opaqueDepth[coord];
 
     float4 normalSample = solidMatNormalsTexture[coord];
     uint4 pbrSample = solidMatPbrTexture[coord];
     float4 lightSample = solidMatLightTexture[coord];
 
-    depth = max(depth, handDepth);
-    opaqueDepth = max(opaqueDepth, handDepth);
+    // depth = max(depth, handDepth);
+    // opaqueDepth = max(opaqueDepth, handDepth);
 
     float3 screenSpacePos = float3(uv, depth);
     float3 screenSpacePosBack = float3(uv, opaqueDepth);

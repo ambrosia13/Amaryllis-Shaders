@@ -7,6 +7,7 @@ import lib.atmosphere;
 import lib.sky;
 import lib.util;
 import lib.color;
+import lib.raytrace;
 
 Texture2D solidAlbedoTexture;
 Texture2D<float4> solidMatNormalsTexture;
@@ -36,21 +37,29 @@ FragmentOutput main(float2 pos: SV_Position) {
     Material mat = Material.unpack(matNormalsSample, matPbrSample, matLightSample);
 
     float depth = ap.opaqueDepth[coord];
-    float handDepth = ap.handDepth[coord];
-
-    // since the deferred target includes the hand, merge with that before proceeding
-    depth = max(depth, handDepth);
 
     float3 screenSpacePos = float3(pos / ap.game.renderSize, depth);
     float3 sceneSpacePos = screenSpaceToSceneSpace(screenSpacePos);
 
     float3 viewDir = normalize(sceneSpacePos);
 
+    // VoxelHit hit;
+    // if (raytraceVoxelMap(ap.camera.position, viewDir, 16, hit)) {
+    //     color = float3(1);
+    //     sceneSpacePos = hit.pos;
+    //     mat.fragNormal = hit.normal;
+    //     mat.vertexNormal = hit.normal;
+    //     mat.ambientOcclusion = 1.0;
+    //     mat.sssAmount = 0.0;
+    // }
+
     if (depth != 0.0) {
         // linearize gamma-corrected albedo before lighting
         color = linearizeSrgb(color);
 
         float shadowFactor = 1.0;
+
+
 
         color *= lighting(
             transmittanceLookupTexture,

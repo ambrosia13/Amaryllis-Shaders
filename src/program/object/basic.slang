@@ -10,6 +10,8 @@ import lib.blockIds;
 import lib.face;
 import lib.noise;
 
+extern static const bool forwardLit = false;
+
 Texture2D transmittanceLookupTexture;
 TextureCube skyCubemapTexture;
 
@@ -151,7 +153,7 @@ struct GbufferShader : Shader<VertexOutput, FragmentOutput> {
 
         float shadowFactor = 1.0;
 
-        if (iris_isTranslucent) {
+        if (forwardLit) {
             // convert to linear srgb before lighting
             color.rgb = linearizeSrgb(color.rgb);
 
