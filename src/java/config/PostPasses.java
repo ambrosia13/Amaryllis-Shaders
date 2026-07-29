@@ -65,7 +65,7 @@ public class PostPasses {
 
     // returns count of depth levels
     static int hiZPass(Screen screen, PipelineConfig pipeline) {
-        // hi-z downsampling pass; downsamples the depth texture in a compute shader (not single-pass)
+        // hi-z downsampling pass; uses aperture's SPD impl
         var hiDepthTexture = pipeline.texture2D("hiDepthTexture", TextureFormat.R32_SFLOAT)
             .renderSize()
             .usesMipmaps()
@@ -80,24 +80,8 @@ public class PostPasses {
         int minDimension = Math.min(screen.renderWidth(), screen.renderHeight());
         int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0)) - 3;
 
-        // int i;
-
         pipeline.stage(ProgramStage.PRE_OVERLAY)
             .generateMips(MipCalculator.MAX, hiDepthTexture);
-
-        // for (i = hiLevelStep; i < hiDepthMaxLevels; i++) {
-        //     int level = i * hiLevelStep;
-
-        //     if (level > maxDownsampleLevel) break;
-
-        //     wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, level);
-
-        //     pipeline.stage(ProgramStage.PRE_OVERLAY)
-        //         .compute("depthDownsample" + level, "program/hiZ", "depthDownsample")
-        //         .exportInt("srcLod", level - hiLevelStep)
-        //         .exportInt("dstLod", level)
-        //         .dispatch2D(wgc.x, wgc.y);
-        // }
 
         return maxDownsampleLevel;
     }
