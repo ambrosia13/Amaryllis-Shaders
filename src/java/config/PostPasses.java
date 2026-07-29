@@ -40,9 +40,8 @@ public class PostPasses {
         // run the exposure metering near the end of teh pipeline, doesn't modify so no need to flip here
         var exposure = new Exposure(screen, pipeline, mainTextures.read(), mainTextures.write());
 
-        var bloom = new Bloom(screen, pipeline, mainTextures.read(), mainTextures.write());
-
-        mainTextures.flip();
+        // bloom writes to the main texture in-place, so no need to flip here either
+        var bloom = new Bloom(screen, pipeline, mainTextures);
 
         // pipeline.loadRawTexture(
         //     "dorfCurves", 

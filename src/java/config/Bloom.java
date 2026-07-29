@@ -7,6 +7,8 @@ import dev.irisshaders.aperture.api.objects.Texture2D;
 import dev.irisshaders.aperture.api.objects.TextureFormat;
 import dev.irisshaders.aperture.api.pipeline.PipelineConfig;
 import dev.irisshaders.aperture.api.pipeline.ProgramStage;
+import util.SwapTexture2D;
+import util.Util;
 
 public class Bloom {
     public static final TextureFormat bloomTextureFormat = TextureFormat.RG11B10_UFLOAT; 
@@ -14,7 +16,7 @@ public class Bloom {
     public final Texture2D downsampleTexture;
     public final Texture2D upsampleTexture;
 
-    public Bloom(Screen screen, PipelineConfig pipeline, Texture2D inputTexture, Texture2D outputTexture) {
+    public Bloom(Screen screen, PipelineConfig pipeline, SwapTexture2D mainTextures) {
         // used for bloom sampling to prevent edges/corners from blowing up the screen
         pipeline.sampler("bloomSampler")
             .addressMode(AddressMode.BLACK_BORDER)
@@ -37,7 +39,7 @@ public class Bloom {
         pipeline.stage(ProgramStage.POST_RENDER)
             .composite("bloomDownsampleFirst", "program/bloom/downsample", "downsampleFirst")
             .exportInt("lod", 1)
-            .overrideObject("inputTexture", inputTexture.name())
+            .overrideObject("inputTexture", mainTextures.read().name())
             .writes("color", downsampleTexture, 0);
 
         int minDimension = Math.min(screen.renderWidth(), screen.renderHeight());
@@ -71,10 +73,12 @@ public class Bloom {
                 .writes("color", upsampleTexture, i);
         }
 
+        var wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, 0);
+
         // finally, the merge pass
         pipeline.stage(ProgramStage.POST_RENDER)
-            .composite("bloomMerge", "program/bloom/merge", "main")
-            .overrideObject("inputTexture", inputTexture.name())
-            .writes("color", outputTexture);
+            .compute("bloomMerge", "program/bloom/merge", "main")
+            .overrideObject("targetTexture", mainTextures.overwrite().name()) // since RW to same pixel, we can avoid a flip
+            .dispatch2D(wgc.x, wgc.y); 
     }
 }
