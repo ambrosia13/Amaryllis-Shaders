@@ -56,7 +56,7 @@ public bool raytraceDepth(
 
     if(writeDebug) {
         hiZDebugTexture[currentLevel].Store(cell, 1);
-        printf("starting from level %u, with cell position [%d, %d] and screen coords [%.2f, %.2f]\n", currentLevel, cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
+        // printf("starting from level %u, with cell position [%d, %d] and screen coords [%.2f, %.2f]\n", currentLevel, cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
     }
 
     for (uint i = 0; i < 80; i++) {
@@ -91,7 +91,7 @@ public bool raytraceDepth(
             }
 
             if (writeDebug) {
-                printf("terminating because OOB; at cell [%d, %d] and screen coords [%.2f, %.2f]\n", cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
+                // printf("terminating because OOB; at cell [%d, %d] and screen coords [%.2f, %.2f]\n", cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
             }
 
             break;
@@ -101,10 +101,10 @@ public bool raytraceDepth(
         bool intersect = depthSample > 0.0 && depthSample > windowSpacePos.z;
 
         if (writeDebug) {
-            if (intersect) printf("intersection; ");
-            else printf("no intersection; ");
+            // if (intersect) printf("intersection; ");
+            // else printf("no intersection; ");
 
-            printf("current level is %u, with cell position [%d, %d] and screen coords [%.2f, %.2f]\n", currentLevel, cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
+            // printf("current level is %u, with cell position [%d, %d] and screen coords [%.2f, %.2f]\n", currentLevel, cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
             hiZDebugTexture[currentLevel].Store(cell, 1);
         }
 

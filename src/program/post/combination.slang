@@ -14,6 +14,7 @@ extern static const float maxLuminance = 2.0;
 StructuredBuffer<uint> histogram;
 
 Texture2D outputTexture;
+Texture2D<float> hiDepthTexture;
 Texture2D<uint> hiZDebugTexture;
 
 [[shader("pixel")]]
@@ -35,20 +36,22 @@ float4 main(float2 pos: SV_Position) {
         float3(0.25, 0.75, 0),
         float3(0, 0.75, 0.25),
     };
-
-    var random = Random<Pcg>(Pcg(5353));
     
-    for (int i = 9; i >= 0; i--) {
-        var flag = hiZDebugTexture.Load(int3(coord >> i, i));
+    // for (int i = 9; i >= 0; i--) {
+    //     var flag = hiZDebugTexture.Load(int3(coord >> i, i));
 
-        if (flag == 1) {
-            // (float3(random.getFloat(), random.getFloat(), random.getFloat()))
-            color = lerp(color, debugColors[i], 1.0);
-        }
+    //     if (flag == 1) {
+    //         color = lerp(color, debugColors[i], 1.0);
+    //     }
 
-        if (flag == 2 && i < 4) {
-            color = lerp(color, float3(1, 0, 0), 1);
-        }
+    //     if (flag == 2 && i < 4) {
+    //         color = lerp(color, float3(1, 0, 0), 1);
+    //     }
+    // }
+
+    for (int i = 1; i < 9; i++) {
+        float depth = hiDepthTexture.Load(int3(coord >> i, i));
+        if (depth == 0) color = debugColors[i];
     }
     
     color = mul(AP1toSRGB, color);
