@@ -121,11 +121,11 @@ FragmentOutput main(float2 pos: SV_Position) {
                 ap.timing.timeElapsed
             );
 
-            mat.fragNormal = normalize(
-                mul(transpose(tbn), normalize(
-                    cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
-                ))
-            );
+            // mat.fragNormal = normalize(
+            //     mul(transpose(tbn), normalize(
+            //         cross(float3(-2.0, 0.0, gradient.x), float3(0.0, -2.0, -gradient.y))
+            //     ))
+            // );
 
         }
 
@@ -143,7 +143,7 @@ FragmentOutput main(float2 pos: SV_Position) {
 
             float3 reflectedRayDir = normalize(sceneSpaceToScreenSpace(sceneSpacePos + reflectedViewDir) - screenSpacePos);
 
-            bool hit = raytraceDepth(screenSpacePos, reflectedRayDir, reflectedScreenSpacePos);
+            bool hit = raytraceDepth(screenSpacePos, reflectedRayDir, reflectedScreenSpacePos, all(uint2(floor(pos)) == 5 * ap.game.renderSize / 19));
 
             if (hit) {
                 reflectColor = preOverlayHistory.Sample(apt_linearSampler, reflectedScreenSpacePos.xy).rgb;

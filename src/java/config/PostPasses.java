@@ -1,5 +1,7 @@
 package config;
 
+import org.joml.Vector4f;
+
 import dev.irisshaders.aperture.api.commands.MipCalculator;
 import dev.irisshaders.aperture.api.objects.Screen;
 import dev.irisshaders.aperture.api.objects.Texture2D;
@@ -71,6 +73,14 @@ public class PostPasses {
             .usesMipmaps()
             .create();
         
+        var hiZDebugTexture = pipeline.texture2D("hiZDebugTexture", TextureFormat.R32_UINT)
+            .renderSize()
+            .usesMipmaps()
+            .create();
+        
+        pipeline.stage(ProgramStage.PRE_RENDER)
+            .clearTo(new Vector4f(), hiZDebugTexture);
+
         var wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, 0);
 
         pipeline.stage(ProgramStage.PRE_OVERLAY)
@@ -78,7 +88,7 @@ public class PostPasses {
             .dispatch2D(wgc.x, wgc.y);
 
         int minDimension = Math.min(screen.renderWidth(), screen.renderHeight());
-        int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0)) - 3;
+        int maxDownsampleLevel = (int) Math.floor(Math.log((double) minDimension) / Math.log(2.0));
 
         pipeline.stage(ProgramStage.PRE_OVERLAY)
             .generateMips(MipCalculator.MAX, hiDepthTexture);

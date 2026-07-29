@@ -5,6 +5,7 @@ import lib.math;
 extern static const uint hiDepthLevelCount;
 
 Texture2D<float> hiDepthTexture;
+RWTexture2D<uint> hiZDebugTexture[];
 
 float getHiZCellSize(uint lod) {
     return 1 << lod;
@@ -31,12 +32,12 @@ void getHiZTraversalDists(
 }
 
 public bool raytraceDepth(
-    // is (screenCoord, depth)
     float3 screenSpacePos,
     float3 rayDir,
     out float3 intersection,
+    bool writeDebug,
 ) {
-    uint maxLevel = hiDepthLevelCount - 1;
+    uint maxLevel = 7;
     uint currentLevel = maxLevel;
 
     float3 windowSpacePos = screenSpacePos * float3(ap.game.renderSize, 1.0);
@@ -45,35 +46,71 @@ public bool raytraceDepth(
     float2 stepDir, stepSizes, nextDist;
     int2 cell;
 
+    // mark the starting positions of each cell
+    for (uint i = 0; i <= currentLevel; i++) {
+        getHiZTraversalDists(windowSpacePos, windowSpaceDir, i, stepDir, stepSizes, nextDist, cell);
+        if (writeDebug) hiZDebugTexture[i].Store(cell, 2);
+    }
+    
     getHiZTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
+
+    if(writeDebug) {
+        hiZDebugTexture[currentLevel].Store(cell, 1);
+        printf("starting from level %u, with cell position [%d, %d] and screen coords [%.2f, %.2f]\n", currentLevel, cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
+    }
 
     for (uint i = 0; i < 80; i++) {
         // if direction is axis aligned (ie one axis is zero), discourage stepping along that axis because step size there is inf or nan
         nextDist = select(abs(windowSpaceDir.xy) < 0.00001, float2(float.maxValue), nextDist);
         
         float closestDist = min(nextDist.x, nextDist.y); // in units of cells
-        float windowSpaceDist = closestDist * getHiZCellSize(currentLevel); // in unit of pixels
+        float windowSpaceDist = closestDist;// * getHiZCellSize(currentLevel); // in unit of pixels // apparently not? avoiding this multiply makes numbers that make sense
+        // windowSpaceDist = max(windowSpaceDist, 0.0) * 1.01;
 
         float3 previousWindowSpacePos = windowSpacePos;
         windowSpacePos += windowSpaceDist * windowSpaceDir;
-
-        float2 stepAxis = float2(nextDist <= float2(closestDist));
-
+ 
+        int2 stepAxis = int2(nextDist <= float2(closestDist));
+        
         int2 previousCell = cell;
-        cell += int2(stepAxis * stepDir);
-
+        cell += stepAxis * int2(stepDir);
+        
         nextDist -= closestDist;
         nextDist += stepSizes * stepAxis;
 
         int2 cellCount = ap.game.renderSize >> currentLevel;
         if (any(cell < int2(0)) || any(cell >= cellCount)) {
+            // we can only be sure we are OOB if at lod 0, so step down a level until that is the case
+            if (currentLevel > 0) {
+                windowSpacePos = previousWindowSpacePos;
+                currentLevel -= 1;
+
+                // recalculate distances and sizes based on level
+                getHiZTraversalDists(windowSpacePos, windowSpaceDir, currentLevel, stepDir, stepSizes, nextDist, cell);
+                continue;
+            }
+
+            if (writeDebug) {
+                printf("terminating because OOB; at cell [%d, %d] and screen coords [%.2f, %.2f]\n", cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
+            }
+
             break;
         }
 
         float depthSample = hiDepthTexture.Load(int3(cell, currentLevel));
+        bool intersect = depthSample > 0.0 && depthSample > windowSpacePos.z;
 
-        if (depthSample > 0.0 && depthSample > windowSpacePos.z) {
+        if (writeDebug) {
+            if (intersect) printf("intersection; ");
+            else printf("no intersection; ");
+
+            printf("current level is %u, with cell position [%d, %d] and screen coords [%.2f, %.2f]\n", currentLevel, cell.x, cell.y, windowSpacePos.x, windowSpacePos.y);
+            hiZDebugTexture[currentLevel].Store(cell, 1);
+        }
+
+        if (intersect) {
             if (currentLevel == 0) {
+                // intersection = float3(cell.xy, windowSpacePos.z) / float3(ap.game.renderSize, 1.0);
                 intersection = windowSpacePos / float3(ap.game.renderSize, 1.0);
                 return true;
             }
@@ -82,6 +119,7 @@ public bool raytraceDepth(
             // aka the farthest we can go from the currently known information (sampled depth)
             float distToSampledDepth = max(0.0, (depthSample - previousWindowSpacePos.z) / windowSpaceDir.z);
             windowSpacePos = previousWindowSpacePos + distToSampledDepth * windowSpaceDir;
+            // windowSpacePos = previousWindowSpacePos;
 
             currentLevel -= 1;
 
