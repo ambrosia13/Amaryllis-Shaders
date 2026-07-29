@@ -11,7 +11,7 @@ import lib.random;
 import lib.color;
 import lib.math;
 
-extern static const uint skyCubemapMips = 0;
+extern static const uint skyCubemapMips = 8;
 
 static const uint sssSamples = 4;
 static const float sssDepth = 2.0;
@@ -27,7 +27,7 @@ public float3 lighting(
 ) {
     float3 lighting = float3(0.0);
 
-    Random<Ign> random = Random<Ign>(Ign(coord, ap.timing.frameCounter));
+    Random<Ign> ign = Random<Ign>(Ign(coord, ap.timing.frameCounter));
 
     float distance = length(sceneSpacePos);
 
@@ -60,7 +60,7 @@ public float3 lighting(
     uint cascade = selectShadowCascade(shadowViewSpacePos, shadowScreenSpacePos);
 
     bool shadowOutOfBounds;
-    float sampledShadowFactor = shadowVisibility<true, Ign>(random, cascade, shadowScreenSpacePos, basePenumbraSize, 8, shadowOutOfBounds);
+    float sampledShadowFactor = shadowVisibility<true, Ign>(ign, cascade, shadowScreenSpacePos, basePenumbraSize, 8, shadowOutOfBounds);
     sampledShadowFactor = select(shadowOutOfBounds, float(dot(mat.vertexNormal, lightVector) > 0.001), sampledShadowFactor);
 
     float sssDistance = 0.0;
@@ -68,11 +68,11 @@ public float3 lighting(
 
     if (mat.sssAmount != 0.0) {
         for (uint i = 0; i < sssSamples; i++) {
-            sssDistance += (sssDepth * mat.sssAmount) / sssSamples * random.getFloat();
+            sssDistance += (sssDepth * mat.sssAmount) / sssSamples * ign.getFloat();
 
             shadowViewSpacePos = setupShadowViewSpacePos(sceneSpacePos + lightVector * sssDistance, distance, float3(0));
             cascade = selectShadowCascade(shadowViewSpacePos, shadowScreenSpacePos);
-            float sssShadowFactor = shadowVisibility<true, Ign>(random, cascade, shadowScreenSpacePos, basePenumbraSize, 8, shadowOutOfBounds);
+            float sssShadowFactor = shadowVisibility<true, Ign>(ign, cascade, shadowScreenSpacePos, basePenumbraSize, 8, shadowOutOfBounds);
             sssShadowFactor = select(shadowOutOfBounds, float(dot(mat.vertexNormal, lightVector) > 0.001), sssShadowFactor);
 
             lightOpticalDepth += sssShadowFactor / sssSamples;

@@ -22,7 +22,7 @@ FragmentOutput main(float2 pos: SV_Position) {
     float purkinjeAmount = exp(-luminance(color) * 400.0);
 
     float3 darkVisionColor = purkinjeShift(color);
-    color.rgb = lerp(color.rgb, darkVisionColor, purkinjeAmount);
+    // color.rgb = lerp(color.rgb, darkVisionColor, purkinjeAmount);
 
     float sceneLuminance = meteredLuminance[0];
     sceneLuminance = clamp(sceneLuminance, 0.008, 0.15);

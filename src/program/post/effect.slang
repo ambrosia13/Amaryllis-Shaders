@@ -76,7 +76,7 @@ FragmentOutput main(float2 pos: SV_Position) {
 
             float3 waterColor = normalizeLuminance(linearizeSrgb(float3(0.1, 0.7, 0.8)));
 
-            float waterDensity = 0.1;
+            float waterDensity = 0.25;
             float opticalDepth = waterThickness;
             float lightOpticalDepth = 0.0;
             uint waterScatteringSteps = 8;
@@ -87,6 +87,7 @@ FragmentOutput main(float2 pos: SV_Position) {
             float3 lightVector = getLightVector();
 
             float VdotL = (dot(viewDir, lightVector));
+            float volumetricLightFactor = 0.0;
 
             for (uint i = 0; i < waterScatteringSteps; i++) {
                 float3 rayPos = lerp(ap.camera.fluid == 1 ? float3(0) : sceneSpacePos, sceneSpacePosBack, (i + random.getFloat()) / float(waterScatteringSteps));
@@ -101,27 +102,31 @@ FragmentOutput main(float2 pos: SV_Position) {
 
                 // waterScattering += waterColor * inScattering * exp(-length(rayPos));
 
-                float viewDepth = select(ap.camera.fluid == 1, length(rayPos), length(rayPos - sceneSpacePos));
-                float viewTransmittance = exp(-viewDepth * waterDensity);
-
                 bool outOfBounds;
-                waterScattering += waterColor 
-                    * (shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds)) / waterScatteringSteps
-                    * getValFromTLUT(transmittanceLookupTexture, getAtmosphereViewingPos(), lightVector)
-                    // * viewTransmittance
-                    * getMiePhase(VdotL, 0.5)
-                    + waterColor * atmosphereTopColor / waterScatteringSteps * mat.skyLight * 0.1;
+                volumetricLightFactor += (1.0 / 64.0) 
+                    * (shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds)) / waterScatteringSteps 
+                    * (ap.camera.fluid == 0 ? length(sceneSpacePosBack - sceneSpacePos) : length(sceneSpacePos));
+
+                // float viewDepth = select(ap.camera.fluid == 1, length(rayPos), length(rayPos - sceneSpacePos));
+                // float viewTransmittance = exp(-viewDepth * waterDensity);
+
+                // waterScattering += waterColor 
+                //     * (shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds)) / waterScatteringSteps
+                //     * getValFromTLUT(transmittanceLookupTexture, getAtmosphereViewingPos(), lightVector)
+                //     * viewTransmittance
+                //     * getMiePhase(VdotL, 0.5)
+                //     + waterColor * atmosphereTopColor / waterScatteringSteps * mat.skyLight;
 
                 // float sampledShadowDepth = ap.shadow.sampleLinear(shadowScreenSpacePos.xy, cascade);
 
                 // for (uint j = 0; j < waterScatteringSecondarySteps; j++) {
                     
-
-                    
                 //     bool outOfBounds;
                 //     float shadowFactor = shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds);
                 // }
             }
+
+            waterScattering = 0.1 * waterColor * luminance(atmosphereTopColor) * (1.0 + 16.0 * volumetricLightFactor * getMiePhase(VdotL, 0.5));
 
             float phase = getMiePhase(dot(viewDir, lightVector), 0.7);
             float transmittance = exp(-opticalDepth * waterDensity);
