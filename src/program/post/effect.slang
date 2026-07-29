@@ -18,7 +18,6 @@ import lib.shadows;
 // for fog
 Texture2D transmittanceLookupTexture;
 Texture2D multiscatteringLookupTexture;
-Texture2D skyViewTexture;
 
 TextureCube skyCubemapTexture;
 
@@ -28,6 +27,7 @@ Texture2D<float4> solidMatLightTexture;
 
 Texture2D inputTexture;
 
+// used for prev-frame reflections
 Texture2D preOverlayHistory;
 
 struct FragmentOutput {
