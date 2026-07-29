@@ -1,6 +1,7 @@
 package mapping;
 
 import dev.irisshaders.aperture.api.commands.CompositeCommand;
+import dev.irisshaders.aperture.api.commands.ComputeCommand;
 import dev.irisshaders.aperture.api.objects.ObjectShaderBuilder;
 
 public class BlockIdMapping {
@@ -17,6 +18,13 @@ public class BlockIdMapping {
     }
     
     public static void exportAllIds(CompositeCommand builder) {
+        builder.exportInt("WATER_ID", WATER_ID);
+        builder.exportInt("FOLIAGE_ID", FOLIAGE_ID);
+        builder.exportInt("SURFACE_FOLIAGE_ID", SURFACE_FOLIAGE_ID);
+        builder.exportInt("LAVA_ID", LAVA_ID);
+    }
+
+    public static void exportAllIds(ComputeCommand builder) {
         builder.exportInt("WATER_ID", WATER_ID);
         builder.exportInt("FOLIAGE_ID", FOLIAGE_ID);
         builder.exportInt("SURFACE_FOLIAGE_ID", SURFACE_FOLIAGE_ID);

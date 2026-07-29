@@ -9,7 +9,7 @@ import lib.util;
 import lib.color;
 import lib.raytrace;
 
-Texture2D solidAlbedoTexture;
+RWTexture2D targetTexture;
 Texture2D<float4> solidMatNormalsTexture;
 Texture2D<uint4> solidMatPbrTexture;
 Texture2D<float4> solidMatLightTexture;
@@ -19,26 +19,27 @@ Texture2D multiscatteringLookupTexture;
 Texture2D skyViewTexture;
 TextureCube skyCubemapTexture;
 
-struct FragmentOutput {
-    float4 color;
-}
+[[numthreads(8, 8, 1)]]
+[[shader("compute")]]
+void main(uint3 globalInvocationId: SV_DispatchThreadID) {
+    if (any(globalInvocationId.xy >= ap.game.renderSize)) {
+        return;
+    }
 
-[[shader("pixel")]]
-FragmentOutput main(float2 pos: SV_Position) {
-    float2 uv = pos / ap.game.renderSize;
-    int2 coord = int2(pos);
+    float2 uv = float2(globalInvocationId.xy) / ap.game.renderSize;
 
-    float3 color = solidAlbedoTexture[coord].rgb;
+    // albedo is stored in the input texture at this point
+    float3 color = targetTexture[globalInvocationId.xy].rgb;
 
-    float4 matNormalsSample = solidMatNormalsTexture[coord];
-    uint4 matPbrSample = solidMatPbrTexture[coord];
-    float4 matLightSample = solidMatLightTexture[coord];
+    float4 matNormalsSample = solidMatNormalsTexture[globalInvocationId.xy];
+    uint4 matPbrSample = solidMatPbrTexture[globalInvocationId.xy];
+    float4 matLightSample = solidMatLightTexture[globalInvocationId.xy];
 
     Material mat = Material.unpack(matNormalsSample, matPbrSample, matLightSample);
 
-    float depth = ap.opaqueDepth[coord];
+    float depth = ap.opaqueDepth[globalInvocationId.xy];
 
-    float3 screenSpacePos = float3(pos / ap.game.renderSize, depth);
+    float3 screenSpacePos = float3(uv, depth);
     float3 sceneSpacePos = screenSpaceToSceneSpace(screenSpacePos);
 
     float3 viewDir = normalize(sceneSpacePos);
@@ -65,7 +66,7 @@ FragmentOutput main(float2 pos: SV_Position) {
         color *= lighting(
             transmittanceLookupTexture,
             skyCubemapTexture,
-            coord,
+            globalInvocationId.xy,
             sceneSpacePos, 
             mat,
             color.rgb,
@@ -79,10 +80,5 @@ FragmentOutput main(float2 pos: SV_Position) {
         drawSunOnAtmosphere(color, transmittanceLookupTexture, viewDir);
     }
 
-
-    FragmentOutput output;
-
-    output.color = float4(color, 1.0);
-
-    return output;
+    targetTexture.Store(globalInvocationId.xy, float4(color, 1.0));
 }

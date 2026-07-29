@@ -6,6 +6,7 @@ import dev.irisshaders.aperture.api.objects.*;
 import dev.irisshaders.aperture.api.pipeline.*;
 import mapping.BlockIdMapping;
 import util.SwapTexture2D;
+import util.Util;
 
 public class Gbuffer {
     // we need high dynamic range in RGB, but we also need the alpha channel intact, so use rgba16f
@@ -47,7 +48,7 @@ public class Gbuffer {
 
     public final Texture2D shadowFactor;
 
-    public Gbuffer(PipelineConfig pipeline, SwapTexture2D mainTextures) {
+    public Gbuffer(Screen screen, PipelineConfig pipeline, SwapTexture2D mainTextures) {
         // since the solid and translucent passes write to the main textures, clear them
         pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), mainTextures.a);
         pipeline.stage(ProgramStage.PRE_RENDER).clearTo(new Vector4f(0.0f), mainTextures.b);
@@ -91,20 +92,20 @@ public class Gbuffer {
             BlockIdMapping.exportAllIds(builder);
         }
 
+        var wgc = Util.getWorkgroupCountFromSize(screen, 8, 8, 0);
+
         // do deferred shading in pre-translucent stage
+        // no need to flip here because in this case it's sound to read and write to the same image
         var deferredBuilder = pipeline.stage(ProgramStage.PRE_TRANSLUCENT)
-            .composite("deferred", "program/object/deferred", "main")
-            // reads from a and writes to b
-            .writes("color", mainTextures.write())
-            .overrideObject("solidAlbedoTexture", mainTextures.read().name())
+            .compute("deferred", "program/object/deferred", "main")
+            .overrideObject("targetTexture", mainTextures.overwrite().name())
             .exportFloat("skyCubemapMips", Sky.cubemapMips)
             .exportInt("shadowCascadeCount", Shadow.cascadeCount)
             .exportInt("shadowMapSize", Shadow.size);
-                 
+
         BlockIdMapping.exportAllIds(deferredBuilder);
 
-        // flip after deferred pass, since it read from a and wrote to b
-        mainTextures.flip();
+        deferredBuilder.dispatch2D(wgc.x, wgc.y);
 
         for (var target : forwardTargets) {
             // albedo should blend normally, but aux data should not blend
