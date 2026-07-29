@@ -44,15 +44,11 @@ FragmentOutput main(float2 pos: SV_Position) {
     float3 color = inputTexture.Sample(apt_linearSampler, uv).rgb;
 
     float depth = ap.depth[coord];
-    // float handDepth = ap.handDepth[coord];
     float opaqueDepth = ap.opaqueDepth[coord];
 
     float4 normalSample = solidMatNormalsTexture[coord];
     uint4 pbrSample = solidMatPbrTexture[coord];
     float4 lightSample = solidMatLightTexture[coord];
-
-    // depth = max(depth, handDepth);
-    // opaqueDepth = max(opaqueDepth, handDepth);
 
     float3 screenSpacePos = float3(uv, depth);
     float3 screenSpacePosBack = float3(uv, opaqueDepth);
@@ -82,8 +78,6 @@ FragmentOutput main(float2 pos: SV_Position) {
             uint waterScatteringSteps = 8;
             uint waterScatteringSecondarySteps = 8;
 
-            float3 waterScattering = float3(0.0);
-
             float3 lightVector = getLightVector();
 
             float VdotL = (dot(viewDir, lightVector));
@@ -96,45 +90,16 @@ FragmentOutput main(float2 pos: SV_Position) {
                 float3 shadowScreenSpacePos;
                 uint cascade = selectShadowCascade(shadowViewSpacePos, shadowScreenSpacePos);
 
-                // float sampledShadowDepth = ap.shadow.sampleLinear(shadowScreenSpacePos.xy, cascade);
-                // float lightDist = max(0.0, ((sampledShadowDepth - shadowScreenSpacePos.z) - 256.05) * (256 - (-256.05)));
-                // float inScattering = exp(-lightDist * waterDensity) * getMiePhase(VdotL, 0.5) * 0.9 + 0.1;
-
-                // waterScattering += waterColor * inScattering * exp(-length(rayPos));
-
                 bool outOfBounds;
                 volumetricLightFactor += (1.0 / 64.0) 
                     * (shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds)) / waterScatteringSteps 
                     * (ap.camera.fluid == 0 ? length(sceneSpacePosBack - sceneSpacePos) : length(sceneSpacePos));
-
-                // float viewDepth = select(ap.camera.fluid == 1, length(rayPos), length(rayPos - sceneSpacePos));
-                // float viewTransmittance = exp(-viewDepth * waterDensity);
-
-                // waterScattering += waterColor 
-                //     * (shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds)) / waterScatteringSteps
-                //     * getValFromTLUT(transmittanceLookupTexture, getAtmosphereViewingPos(), lightVector)
-                //     * viewTransmittance
-                //     * getMiePhase(VdotL, 0.5)
-                //     + waterColor * atmosphereTopColor / waterScatteringSteps * mat.skyLight;
-
-                // float sampledShadowDepth = ap.shadow.sampleLinear(shadowScreenSpacePos.xy, cascade);
-
-                // for (uint j = 0; j < waterScatteringSecondarySteps; j++) {
-                    
-                //     bool outOfBounds;
-                //     float shadowFactor = shadowVisibility<false, Ign>(random, cascade, shadowScreenSpacePos, 0.0, 1, outOfBounds);
-                // }
             }
 
-            waterScattering = 0.1 * waterColor * luminance(atmosphereTopColor) * (1.0 + 16.0 * volumetricLightFactor * getMiePhase(VdotL, 0.5));
-
-            float phase = getMiePhase(dot(viewDir, lightVector), 0.7);
-            float transmittance = exp(-opticalDepth * waterDensity);
-            float3 waterScatteringColor = 0.05 * normalizeLuminance(linearizeSrgb(float3(0.1, 0.7, 0.8))) * (0.5 + phase);
-            // float3 waterScattering = waterScatteringColor * (1 - lightOpticalDepth);
+            float3 waterScattering = 0.1 * waterColor * luminance(atmosphereTopColor) * (1.0 + 16.0 * volumetricLightFactor * getMiePhase(VdotL, 0.5));
+            float transmittance = exp(-opticalDepth * waterDensity);            
             
             color.rgb = lerp(waterScattering, color.rgb, transmittance);
-            // color = float3(exp(-lightOpticalDepth));
 
         }
 
@@ -182,7 +147,6 @@ FragmentOutput main(float2 pos: SV_Position) {
 
             if (hit) {
                 reflectColor = preOverlayHistory.Sample(apt_linearSampler, reflectedScreenSpacePos.xy).rgb;
-                // reflectance = float3(1);
             }
 
             color.rgb = lerp(color.rgb, reflectColor, reflectance);
@@ -202,24 +166,9 @@ FragmentOutput main(float2 pos: SV_Position) {
                 fogTransmittance
             );
 
-            // color.rgb = fogScattering;
             color.rgb = lerp(color.rgb, color.rgb * fogTransmittance + fogScattering, ap.camera.brightness.y);
         }
     }
-
-    // TextureNoise2D texNoise = TextureNoise2D(cellular2DTexture);
-    // // color *= float(smoothstep(0.5, 0.7, fbm<8>(texNoise, uv * 3.0, rotationMatrix(radians(30)), 2.0, ap.timing.timeElapsed * 0.01) * 0.5 + 0.5));
-    // color *= smoothstep(0.5, 0.7, texNoise.getValue(fract(uv * 2.0), 0.0));
-
-    // Random<Ign> random = Random<Ign>(Ign(int2(pos), ap.timing.frameCounter));
-
-    // float2 plane = viewDir.xz / viewDir.y;
-
-    // if (viewDir.y > 0.001) {
-    //     float2 gradient;
-    //     float2 bleh = CumulusClouds().getTransmittanceAndScattering(random, viewDir);
-    //     drawCloudsOnAtmosphere<CumulusClouds>(color.rgb, transmittanceLookupTexture, skyViewTexture, viewDir, bleh);
-    // }
 
     return FragmentOutput(float4(color, 1));
 }
